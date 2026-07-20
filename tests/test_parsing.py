@@ -4,10 +4,10 @@ from decimal import Decimal
 import pytest
 
 from sou.models import Account, Posting, Transaction
-from sou.parser import JournalParseError, parse_journal
+from sou.parser import JournalParseError, parse_sou
 
 
-EXAMPLE_JOURNAL = """[JOURNAL]
+EXAMPLE_SOU = """[JOURNAL]
 
 year: 2025
 
@@ -34,21 +34,21 @@ Expenses
 
 
 def test_parse_accounts():
-    journal = parse_journal(EXAMPLE_JOURNAL)
+    journal = parse_sou(EXAMPLE_SOU)
 
     assert journal.year == 2025
     assert journal.accounts == {
-        Account(type="Assets", path=("Checkings",)),
-        Account(type="Liabilities", path=("Test",)),
-        Account(type="Liabilities", path=("Test", "Tit")),
-        Account(type="Equity", path=("Hey",)),
-        Account(type="Income", path=("Stuff",)),
-        Account(type="Expenses", path=("Test",)),
+        Account(category="Assets", path=("Checkings",)),
+        Account(category="Liabilities", path=("Test",)),
+        Account(category="Liabilities", path=("Test", "Tit")),
+        Account(category="Equity", path=("Hey",)),
+        Account(category="Income", path=("Stuff",)),
+        Account(category="Expenses", path=("Test",)),
     }
 
 
 def test_parse_transactions():
-    journal = parse_journal(EXAMPLE_JOURNAL)
+    journal = parse_sou(EXAMPLE_SOU)
 
     assert journal.transactions == [
         Transaction(
@@ -56,11 +56,11 @@ def test_parse_transactions():
             description="Just some transaction",
             postings=[
                 Posting(
-                    account=Account(type="Assets", path=("Checkings",)),
+                    account=Account(category="Assets", path=("Checkings",)),
                     amount=Decimal("-100"),
                 ),
                 Posting(
-                    account=Account(type="Expenses", path=("Test",)),
+                    account=Account(category="Expenses", path=("Test",)),
                     amount=Decimal("100"),
                 ),
             ],
@@ -69,10 +69,10 @@ def test_parse_transactions():
 
 
 def test_multiple_postings():
-    text = EXAMPLE_JOURNAL.replace("Expenses::Test  100", "Expenses::Test  50")
-    text = text.rstrip() + "\n  Liabilities::Test:Tit  50\n\n"
+    source = EXAMPLE_SOU.replace("Expenses::Test  100", "Expenses::Test  50")
+    source = source.rstrip() + "\n  Liabilities::Test:Tit  50\n\n"
 
-    journal = parse_journal(text)
+    journal = parse_sou(source)
 
     assert journal.transactions == [
         Transaction(
@@ -80,15 +80,17 @@ def test_multiple_postings():
             description="Just some transaction",
             postings=[
                 Posting(
-                    account=Account(type="Assets", path=("Checkings",)),
+                    account=Account(category="Assets", path=("Checkings",)),
                     amount=Decimal("-100"),
                 ),
                 Posting(
-                    account=Account(type="Expenses", path=("Test",)),
+                    account=Account(category="Expenses", path=("Test",)),
                     amount=Decimal("50"),
                 ),
                 Posting(
-                    account=Account(type="Liabilities", path=("Test", "Tit")),
+                    account=Account(
+                        category="Liabilities", path=("Test", "Tit")
+                    ),
                     amount=Decimal("50"),
                 ),
             ],
@@ -97,11 +99,11 @@ def test_multiple_postings():
 
 
 def test_multiple_transactions():
-    text = (
-        EXAMPLE_JOURNAL.rstrip()
+    source = (
+        EXAMPLE_SOU.rstrip()
         + "\n\n\n2025-10-02 Just some transaction\n  Assets::Checkings  50\n  Equity::Hey -50\n\n"
     )
-    journal = parse_journal(text)
+    journal = parse_sou(source)
 
     assert len(journal.transactions) == 2
     assert journal.transactions[1] == Transaction(
@@ -109,11 +111,11 @@ def test_multiple_transactions():
         description="Just some transaction",
         postings=[
             Posting(
-                account=Account(type="Assets", path=("Checkings",)),
+                account=Account(category="Assets", path=("Checkings",)),
                 amount=Decimal("50"),
             ),
             Posting(
-                account=Account(type="Equity", path=("Hey",)),
+                account=Account(category="Equity", path=("Hey",)),
                 amount=Decimal("-50"),
             ),
         ],
@@ -121,14 +123,14 @@ def test_multiple_transactions():
 
 
 def test_reject_non_balanced_transaction():
-    text = EXAMPLE_JOURNAL.replace("Expenses::Test  100", "Expenses::Test  120")
+    source = EXAMPLE_SOU.replace("Expenses::Test  100", "Expenses::Test  120")
 
     with pytest.raises(JournalParseError):
-        parse_journal(text)
+        parse_sou(source)
 
 
 def test_reject_uknown_account():
-    text = EXAMPLE_JOURNAL.replace("Expenses::Test  100", "Expenses::TO  120")
+    source = EXAMPLE_SOU.replace("Expenses::Test  100", "Expenses::TO  120")
 
     with pytest.raises(JournalParseError):
-        parse_journal(text)
+        parse_sou(source)

@@ -6,11 +6,11 @@ from typing import Literal
 
 @dataclass(frozen=True)
 class Account:
-    type: Literal["Assets", "Liabilities", "Equity", "Income", "Expenses"]
+    category: Literal["Assets", "Liabilities", "Equity", "Income", "Expenses"]
     path: tuple[str, ...]
 
     def __str__(self) -> str:
-        return f"{self.type}::" + ":".join(self.path)
+        return f"{self.category}::" + ":".join(self.path)
 
 
 @dataclass

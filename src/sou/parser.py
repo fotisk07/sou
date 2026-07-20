@@ -6,7 +6,7 @@ from sou.models import Account, Journal, Posting, Transaction
 
 
 SECTIONS = ("JOURNAL", "ACCOUNTS", "TRANSACTIONS")
-ACCOUNT_TYPES = ("Assets", "Liabilities", "Equity", "Income", "Expenses")
+ACCOUNT_CATEGORIES = ("Assets", "Liabilities", "Equity", "Income", "Expenses")
 YEAR_PATTERN = re.compile(r"year:\s*(\d{4})")
 SECTION_PATTERN = re.compile(r"\[(.+)]")
 TRANSACTION_PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2})\s+(.+)")
@@ -17,14 +17,14 @@ class JournalParseError(ValueError):
     pass
 
 
-def parse_journal(txt: str) -> Journal:
+def parse_sou(source: str) -> Journal:
     # First split the document into named sections. We retain line numbers so
     # later validation errors can point to the exact source line.
     sections: dict[str, list[tuple[int, str]]] = {name: [] for name in SECTIONS}
     seen_sections: set[str] = set()
     current_section: str | None = None
 
-    for line_number, line in enumerate(txt.splitlines(), start=1):
+    for line_number, line in enumerate(source.splitlines(), start=1):
         if "\t" in line:
             raise JournalParseError(f"line {line_number}: tabs are not allowed")
 
@@ -91,34 +91,34 @@ def _parse_accounts(lines: list[tuple[int, str]]) -> set[Account]:
     """Parse account categories and their indentation-based account trees."""
     accounts: set[Account] = set()
     category_index = 0
-    account_type: str | None = None
+    account_category: str | None = None
     # `parents` holds the current account path. For example, after reading
     # "  Bank" it is ["Bank"], so "    Checking" becomes Bank:Checking.
     parents: list[str] = []
 
     for line_number, line in lines:
-        # Unindented category headings must follow ACCOUNT_TYPES in order.
+        # Unindented headings must follow ACCOUNT_CATEGORIES in order.
         if not line.startswith(" "):
-            if category_index == len(ACCOUNT_TYPES):
+            if category_index == len(ACCOUNT_CATEGORIES):
                 raise JournalParseError(
-                    f"line {line_number}: unexpected account type '{line}'"
+                    f"line {line_number}: unexpected account category '{line}'"
                 )
 
-            expected_type = ACCOUNT_TYPES[category_index]
-            if line != expected_type:
+            expected_category = ACCOUNT_CATEGORIES[category_index]
+            if line != expected_category:
                 raise JournalParseError(
-                    f"line {line_number}: expected account type "
-                    f"'{expected_type}', found '{line}'"
+                    f"line {line_number}: expected account category "
+                    f"'{expected_category}', found '{line}'"
                 )
 
-            account_type = expected_type
+            account_category = expected_category
             category_index += 1
             parents = []
             continue
 
-        if account_type is None:
+        if account_category is None:
             raise JournalParseError(
-                f"line {line_number}: account appears before an account type"
+                f"line {line_number}: account appears before a category"
             )
 
         # Every two spaces represent one account level below the category.
@@ -144,7 +144,7 @@ def _parse_accounts(lines: list[tuple[int, str]]) -> set[Account]:
         # account to the remaining parent path.
         parents = parents[: depth - 1]
         path = (*parents, name)
-        account = Account(type=account_type, path=path)
+        account = Account(category=account_category, path=path)
         if account in accounts:
             raise JournalParseError(
                 f"line {line_number}: duplicate account '{account}'"
@@ -152,9 +152,11 @@ def _parse_accounts(lines: list[tuple[int, str]]) -> set[Account]:
         accounts.add(account)
         parents.append(name)
 
-    if category_index < len(ACCOUNT_TYPES):
-        expected_type = ACCOUNT_TYPES[category_index]
-        raise JournalParseError(f"missing account type '{expected_type}'")
+    if category_index < len(ACCOUNT_CATEGORIES):
+        expected_category = ACCOUNT_CATEGORIES[category_index]
+        raise JournalParseError(
+            f"missing account category '{expected_category}'"
+        )
 
     return accounts
 
