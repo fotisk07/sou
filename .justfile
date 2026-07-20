@@ -1,11 +1,10 @@
 # Run all tests, or choose: fast, last, or debug.
 
-just test-debug
-  uv run pytest --pdb -x
+test:
+  uv run pytest
 
-just test-last
+test-last:
   uv run pytest --lf
-
 
 # Format the code and check it with Ruff.
 format-check:
