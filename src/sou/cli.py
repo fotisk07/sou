@@ -3,7 +3,7 @@ from pathlib import Path
 
 import click
 
-from .journal import create_journal
+from .storage import init_journal
 
 
 @click.group()
@@ -24,6 +24,6 @@ def cli():
 def init(path: Path, year: int):
     "Create a new journal file."
     try:
-        create_journal(path, year)
+        init_journal(path, year)
     except FileExistsError:
         raise click.ClickException(f"{path} already exists") from None
