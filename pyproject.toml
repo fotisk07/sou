@@ -21,3 +21,8 @@ build-backend = "uv_build"
 
 [tool.ruff]
 format.preview = true
+
+[dependency-groups]
+dev = [
+    "debugpy>=1.8.21",
+]
