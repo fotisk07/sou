@@ -2,11 +2,16 @@ import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
-from sou.models import Account, Journal, Posting, Transaction
+from sou.models import (
+    ACCOUNT_CATEGORIES,
+    Account,
+    Journal,
+    Posting,
+    Transaction,
+)
 
 
 SECTIONS = ("JOURNAL", "ACCOUNTS", "TRANSACTIONS")
-ACCOUNT_CATEGORIES = ("Assets", "Liabilities", "Equity", "Income", "Expenses")
 YEAR_PATTERN = re.compile(r"year:\s*(\d{4})")
 SECTION_PATTERN = re.compile(r"\[(.+)]")
 TRANSACTION_PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2})\s+(.+)")
@@ -65,9 +70,7 @@ def parse_sou(source: str) -> Journal:
     # Transactions receive the accounts so their references can be resolved.
     year = _parse_year(sections["JOURNAL"])
     accounts = _parse_accounts(sections["ACCOUNTS"])
-    transactions = _parse_transactions(
-        sections["TRANSACTIONS"], accounts, year
-    )
+    transactions = _parse_transactions(sections["TRANSACTIONS"], accounts, year)
 
     return Journal(year=year, accounts=accounts, transactions=transactions)
 
@@ -154,9 +157,7 @@ def _parse_accounts(lines: list[tuple[int, str]]) -> set[Account]:
 
     if category_index < len(ACCOUNT_CATEGORIES):
         expected_category = ACCOUNT_CATEGORIES[category_index]
-        raise JournalParseError(
-            f"missing account category '{expected_category}'"
-        )
+        raise JournalParseError(f"missing account category '{expected_category}'")
 
     return accounts
 
@@ -191,8 +192,7 @@ def _parse_transactions(
                 transaction_date = date.fromisoformat(match.group(1))
             except ValueError:
                 raise JournalParseError(
-                    f"line {line_number}: invalid transaction date "
-                    f"'{match.group(1)}'"
+                    f"line {line_number}: invalid transaction date '{match.group(1)}'"
                 ) from None
 
             current = Transaction(
@@ -212,9 +212,7 @@ def _parse_transactions(
         # spaces, so the regular expression takes the decimal amount from the end.
         match = POSTING_PATTERN.fullmatch(line)
         if not match:
-            raise JournalParseError(
-                f"line {line_number}: expected '  ACCOUNT AMOUNT'"
-            )
+            raise JournalParseError(f"line {line_number}: expected '  ACCOUNT AMOUNT'")
 
         account_name, amount_text = match.groups()
         account = accounts_by_name.get(account_name)
@@ -254,9 +252,7 @@ def _validate_transaction(
             f"line {line_number}: transaction must have at least two postings"
         )
 
-    balance = sum(
-        (posting.amount for posting in transaction.postings), Decimal("0")
-    )
+    balance = sum((posting.amount for posting in transaction.postings), Decimal("0"))
     if balance != 0:
         raise JournalParseError(
             f"line {line_number}: transaction is not balanced (difference: {balance})"

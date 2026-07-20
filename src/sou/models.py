@@ -4,9 +4,19 @@ from decimal import Decimal
 from typing import Literal
 
 
+AccountCategory = Literal["Assets", "Liabilities", "Equity", "Income", "Expenses"]
+ACCOUNT_CATEGORIES: tuple[AccountCategory, ...] = (
+    "Assets",
+    "Liabilities",
+    "Equity",
+    "Income",
+    "Expenses",
+)
+
+
 @dataclass(frozen=True)
 class Account:
-    category: Literal["Assets", "Liabilities", "Equity", "Income", "Expenses"]
+    category: AccountCategory
     path: tuple[str, ...]
 
     def __str__(self) -> str:
