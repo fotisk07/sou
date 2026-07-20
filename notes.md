@@ -1,6 +1,6 @@
 ## Plan
 
-2. Add domain models.
+2. Add domain models. OK
 3. Implement parser and formatter.
 4. Test parse → format → parse round trips.
 5. Implement account add.

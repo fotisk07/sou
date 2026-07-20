@@ -96,8 +96,39 @@ def test_multiple_postings():
     ]
 
 
+def test_multiple_transactions():
+    text = (
+        EXAMPLE_JOURNAL.rstrip()
+        + "\n\n\n2025-10-02 Just some transaction\n  Assets::Checkings  50\n  Equity::Hey -50\n\n"
+    )
+    journal = parse_journal(text)
+
+    assert len(journal.transactions) == 2
+    assert journal.transactions[1] == Transaction(
+        date=date(2025, 10, 2),
+        description="Just some transaction",
+        postings=[
+            Posting(
+                account=Account(type="Assets", path=("Checkings",)),
+                amount=Decimal("50"),
+            ),
+            Posting(
+                account=Account(type="Equity", path=("Hey",)),
+                amount=Decimal("-50"),
+            ),
+        ],
+    )
+
+
 def test_reject_non_balanced_transaction():
     text = EXAMPLE_JOURNAL.replace("Expenses::Test  100", "Expenses::Test  120")
+
+    with pytest.raises(JournalParseError):
+        parse_journal(text)
+
+
+def test_reject_uknown_account():
+    text = EXAMPLE_JOURNAL.replace("Expenses::Test  100", "Expenses::TO  120")
 
     with pytest.raises(JournalParseError):
         parse_journal(text)
