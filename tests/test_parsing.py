@@ -88,9 +88,7 @@ def test_multiple_postings():
                     amount=Decimal("50"),
                 ),
                 Posting(
-                    account=Account(
-                        category="Liabilities", path=("Test", "Tit")
-                    ),
+                    account=Account(category="Liabilities", path=("Test", "Tit")),
                     amount=Decimal("50"),
                 ),
             ],

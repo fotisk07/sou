@@ -38,9 +38,7 @@ def test_init(tmpdir):
 def test_init_with_year(tmpdir):
     journal_path = tmpdir / "journal.sou"
 
-    result = CliRunner().invoke(
-        cli.cli, ["init", str(journal_path), "--year", "2024"]
-    )
+    result = CliRunner().invoke(cli.cli, ["init", str(journal_path), "--year", "2024"])
 
     assert result.exit_code == 0
     assert journal_path.read_text(encoding="utf-8") == expected_journal(2024)
