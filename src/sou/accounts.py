@@ -1,8 +1,45 @@
-from sou.models import ACCOUNT_CATEGORIES, Account, Journal
+from sou.models import ACCOUNT_CATEGORIES, Account, AccountCategory, Journal
+
+
+CATEGORY_NAMES: dict[str, AccountCategory] = {
+    "a": "Assets",
+    "assets": "Assets",
+    "l": "Liabilities",
+    "liabilities": "Liabilities",
+    "eq": "Equity",
+    "equity": "Equity",
+    "i": "Income",
+    "income": "Income",
+    "e": "Expenses",
+    "expenses": "Expenses",
+}
 
 
 class AccountError(ValueError):
-    """Raised when an account cannot be added to a journal."""
+    """Raised when an account cannot be added to or found in a journal."""
+
+
+def resolve_account(journal: Journal, reference: str) -> Account:
+    """Resolve a concise or canonical account reference."""
+    if "::" in reference:
+        account = next(
+            (account for account in journal.accounts if str(account) == reference),
+            None,
+        )
+    else:
+        category_name, separator, path_text = reference.partition(":")
+        category = CATEGORY_NAMES.get(category_name.lower())
+        if not separator or category is None or not path_text:
+            raise AccountError(f"invalid account reference '{reference}'")
+
+        account = Account(category=category, path=tuple(path_text.split(":")))
+        if account not in journal.accounts:
+            account = None
+
+    if account is None:
+        raise AccountError(f"unknown account '{reference}'")
+
+    return account
 
 
 def add_account(journal: Journal, account: Account) -> None:
