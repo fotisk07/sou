@@ -11,7 +11,7 @@ def test_add_account(tmp_path):
 
     result = CliRunner().invoke(
         cli.cli,
-        ["add", "a", "Bank", "--destination", str(journal_path)],
+        ["add", "a", "Bank", "--journal", str(journal_path)],
     )
 
     assert result.exit_code == 0
@@ -24,11 +24,11 @@ def test_add_nested_account(tmp_path):
     journal_path = tmp_path / "journal.sou"
     init_journal(journal_path, 2026)
     runner = CliRunner()
-    runner.invoke(cli.cli, ["add", "assets", "Bank", "-d", str(journal_path)])
+    runner.invoke(cli.cli, ["add", "assets", "Bank", "-j", str(journal_path)])
 
     result = runner.invoke(
         cli.cli,
-        ["add", "a", "Bank:Checking", "-d", str(journal_path)],
+        ["add", "a", "Bank:Checking", "-j", str(journal_path)],
     )
 
     assert result.exit_code == 0
@@ -44,7 +44,7 @@ def test_reject_account_without_parent(tmp_path):
 
     result = CliRunner().invoke(
         cli.cli,
-        ["add", "a", "Bank:Checking", "-d", str(journal_path)],
+        ["add", "a", "Bank:Checking", "-j", str(journal_path)],
     )
 
     assert result.exit_code == 1
@@ -56,7 +56,7 @@ def test_reject_duplicate_account_without_changing_journal(tmp_path):
     journal_path = tmp_path / "journal.sou"
     init_journal(journal_path, 2026)
     runner = CliRunner()
-    command = ["add", "e", "Food", "-d", str(journal_path)]
+    command = ["add", "e", "Food", "-j", str(journal_path)]
     assert runner.invoke(cli.cli, command).exit_code == 0
     source = journal_path.read_text(encoding="utf-8")
 
@@ -72,7 +72,7 @@ def test_add_account_reports_missing_journal(tmp_path):
 
     result = CliRunner().invoke(
         cli.cli,
-        ["add", "i", "Salary", "-d", str(journal_path)],
+        ["add", "i", "Salary", "-j", str(journal_path)],
     )
 
     assert result.exit_code == 1

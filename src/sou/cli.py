@@ -52,14 +52,14 @@ def init(path: Path, year: int):
 )
 @click.argument("name")
 @click.option(
-    "-d",
-    "--destination",
+    "-j",
+    "--journal",
+    "journal_path",
     type=click.Path(path_type=Path, dir_okay=False),
     default=Path("journal.sou"),
     show_default=True,
-    help="Journal to update.",
 )
-def add(category: str, name: str, destination: Path):
+def add(category: str, name: str, journal_path: Path):
     """Add NAME to an account CATEGORY.
 
     NAME may be a colon-separated path, such as Bank:Checking. Add parent
@@ -71,10 +71,10 @@ def add(category: str, name: str, destination: Path):
     )
 
     try:
-        journal = load_journal(destination)
+        journal = load_journal(journal_path)
         add_account(journal, account)
-        save_journal(destination, journal)
+        save_journal(journal_path, journal)
     except FileNotFoundError:
-        raise click.ClickException(f"{destination} does not exist") from None
+        raise click.ClickException(f"{journal_path} does not exist") from None
     except (AccountError, JournalParseError) as error:
         raise click.ClickException(str(error)) from None
