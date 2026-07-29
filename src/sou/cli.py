@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import click
+from click.shell_completion import CompletionItem
 from prettytable import PrettyTable
 
 from sou.accounts import (
@@ -17,6 +18,37 @@ from sou.models import Account, Posting, Transaction
 from sou.parser import JournalParseError
 from sou.storage import init_journal, load_journal, save_journal
 from sou.transactions import TransactionError, add_transaction
+
+
+CATEGORY_PREFIXES = {
+    "Assets": "a",
+    "Liabilities": "l",
+    "Equity": "eq",
+    "Income": "i",
+    "Expenses": "e",
+}
+
+
+def complete_account(
+    ctx: click.Context,
+    param: click.Parameter,
+    incomplete: str,
+) -> list[CompletionItem]:
+    """Complete concise account references from the default journal."""
+    try:
+        journal = load_journal(Path("journal.sou"))
+    except (OSError, UnicodeError, JournalParseError):
+        return []
+
+    references = (
+        f"{CATEGORY_PREFIXES[account.category]}:{':'.join(account.path)}"
+        for account in journal.accounts
+    )
+    return [
+        CompletionItem(reference)
+        for reference in sorted(references, key=str.casefold)
+        if reference.casefold().startswith(incomplete.casefold())
+    ]
 
 
 @click.group()
@@ -79,8 +111,8 @@ def add(category: str, name: str, journal_path: Path):
 
 @cli.command()
 @click.argument("amount")
-@click.argument("source")
-@click.argument("target")
+@click.argument("source", shell_complete=complete_account)
+@click.argument("target", shell_complete=complete_account)
 @click.argument("description", nargs=-1, required=True)
 @click.option(
     "-d",
@@ -148,7 +180,7 @@ def post(
 
 
 @cli.command()
-@click.argument("account_reference")
+@click.argument("account_reference", shell_complete=complete_account)
 @click.option("--from", "from_text", help="Start date in MM-DD format.")
 @click.option("--to", "to_text", help="End date in MM-DD format.")
 @click.option(
@@ -214,7 +246,7 @@ def balance(
 
 
 @cli.command()
-@click.argument("account_reference")
+@click.argument("account_reference", shell_complete=complete_account)
 @click.option("--from", "from_text", help="Start date in MM-DD format.")
 @click.option("--to", "to_text", help="End date in MM-DD format.")
 @click.option(

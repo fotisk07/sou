@@ -1,5 +1,6 @@
 # Personal Sou journals
 *.sou
+notes
 
 # Python-generated files
 __pycache__/

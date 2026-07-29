@@ -31,6 +31,31 @@ uv tool upgrade sou
 uv tool uninstall sou
 ```
 
+## Shell completion
+
+Sou can complete commands, options, categories, and account references from the `journal.sou` in the current directory.
+
+For Bash:
+
+```bash
+printf '%s\n' 'COMP_WORDBREAKS=${COMP_WORDBREAKS//:}' > ~/.sou-complete.bash
+_SOU_COMPLETE=bash_source sou >> ~/.sou-complete.bash
+echo '. ~/.sou-complete.bash' >> ~/.bashrc
+source ~/.sou-complete.bash
+```
+
+The `COMP_WORDBREAKS` adjustment is required because Sou uses `:` inside concise account references.
+
+Restart the shell, then complete account references with Tab:
+
+```text
+sou post 12.50 a:Bn<Tab>
+sou balance e:Fo<Tab>
+sou ledger a:Re<Tab>
+```
+
+Account completion intentionally reads only the default `journal.sou`; custom `-j` journal paths are not yet considered.
+
 ## Quick start
 
 Create a directory for your finances and initialize the current year:
