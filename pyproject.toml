@@ -1,7 +1,7 @@
 [project]
 name = "sou"
 version = "0.1.0"
-description = "Add your description here"
+description = "A small, human-readable command-line accounting tool"
 readme = "README.md"
 authors = [
     { name = "fotis", email = "fotiskapotos@gmail.com" }
@@ -10,14 +10,13 @@ requires-python = ">=3.11"
 dependencies = [
     "click>=8.4.2",
     "prettytable>=3.18.0",
-    "pytest>=9.1.1",
 ]
 
 [project.scripts]
 sou = "sou:main"
 
 [build-system]
-requires = ["uv_build>=0.11.21,<0.12.0"]
+requires = ["uv_build>=0.11.21,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.ruff]
@@ -26,4 +25,6 @@ format.preview = true
 [dependency-groups]
 dev = [
     "debugpy>=1.8.21",
+    "pytest>=9.1.1",
+    "ruff==0.12.4",
 ]
