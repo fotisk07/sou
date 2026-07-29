@@ -4,7 +4,13 @@ from pathlib import Path
 
 import click
 
-from sou.accounts import CATEGORY_NAMES, AccountError, add_account, resolve_account
+from sou.accounts import (
+    CATEGORY_NAMES,
+    AccountError,
+    account_balance,
+    add_account,
+    resolve_account,
+)
 from sou.models import Account, Posting, Transaction
 from sou.parser import JournalParseError
 from sou.storage import init_journal, load_journal, save_journal
@@ -137,3 +143,69 @@ def post(
         raise click.ClickException(f"{journal_path} does not exist") from None
     except (AccountError, JournalParseError, TransactionError) as error:
         raise click.ClickException(str(error)) from None
+
+
+@cli.command()
+@click.argument("account_reference")
+@click.option("--from", "from_text", help="Start date in MM-DD format.")
+@click.option("--to", "to_text", help="End date in MM-DD format.")
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def balance(
+    account_reference: str,
+    from_text: str | None,
+    to_text: str | None,
+    journal_path: Path,
+):
+    """Show the balance of ACCOUNT_REFERENCE and its descendants."""
+    try:
+        journal = load_journal(journal_path)
+
+        try:
+            from_date = (
+                date.fromisoformat(f"{journal.year}-{from_text}") if from_text else None
+            )
+        except ValueError:
+            raise click.ClickException(
+                f"invalid from date '{from_text}'; expected MM-DD"
+            ) from None
+
+        try:
+            to_date = (
+                date.fromisoformat(f"{journal.year}-{to_text}") if to_text else None
+            )
+        except ValueError:
+            raise click.ClickException(
+                f"invalid to date '{to_text}'; expected MM-DD"
+            ) from None
+
+        account = resolve_account(journal, account_reference)
+        result = account_balance(journal, account, from_date, to_date)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except (AccountError, JournalParseError) as error:
+        raise click.ClickException(str(error)) from None
+
+    sign = (
+        Decimal("-1")
+        if account.category in {"Liabilities", "Equity", "Income"}
+        else Decimal("1")
+    )
+    opening = result.opening * sign
+    activity = result.activity * sign
+    closing = result.closing * sign
+
+    if from_text is None and to_text is None:
+        click.echo(f"{account}  {format(closing, 'f')}")
+        return
+
+    click.echo(str(account))
+    click.echo(f"Opening:  {format(opening, 'f')}")
+    click.echo(f"Activity:  {format(activity, 'f')}")
+    click.echo(f"Closing:  {format(closing, 'f')}")

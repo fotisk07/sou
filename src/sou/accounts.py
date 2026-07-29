@@ -1,5 +1,13 @@
-from sou.models import ACCOUNT_CATEGORIES, Account, AccountCategory, Journal
+from datetime import date
+from decimal import Decimal
 
+from sou.models import (
+    ACCOUNT_CATEGORIES,
+    Account,
+    AccountBalance,
+    AccountCategory,
+    Journal,
+)
 
 CATEGORY_NAMES: dict[str, AccountCategory] = {
     "a": "Assets",
@@ -69,3 +77,45 @@ def add_account(journal: Journal, account: Account) -> None:
             raise AccountError(f"parent account '{parent}' does not exist")
 
     journal.accounts.add(account)
+
+
+def account_balance(
+    journal: Journal,
+    account: Account,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> AccountBalance:
+    """Calculate the signed balance of an account and its descendants."""
+    if account not in journal.accounts:
+        raise AccountError(f"unknown account '{account}'")
+
+    start = from_date or date(journal.year, 1, 1)
+    end = to_date or date(journal.year, 12, 31)
+
+    if start.year != journal.year or end.year != journal.year:
+        raise AccountError(f"balance dates must be within journal year {journal.year}")
+    if start > end:
+        raise AccountError("from date cannot be after to date")
+
+    opening = Decimal("0")
+    activity = Decimal("0")
+
+    for transaction in journal.transactions:
+        for posting in transaction.postings:
+            is_selected = (
+                posting.account.category == account.category
+                and posting.account.path[: len(account.path)] == account.path
+            )
+            if not is_selected:
+                continue
+
+            if transaction.date < start:
+                opening += posting.amount
+            elif transaction.date <= end:
+                activity += posting.amount
+
+    return AccountBalance(
+        opening=opening,
+        activity=activity,
+        closing=opening + activity,
+    )

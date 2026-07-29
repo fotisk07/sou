@@ -41,3 +41,10 @@ class Journal:
     year: int
     accounts: set[Account]
     transactions: list[Transaction]
+
+
+@dataclass(frozen=True)
+class AccountBalance:
+    opening: Decimal
+    activity: Decimal
+    closing: Decimal
