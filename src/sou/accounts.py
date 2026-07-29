@@ -6,7 +6,9 @@ from sou.models import (
     Account,
     AccountBalance,
     AccountCategory,
+    AccountLedger,
     Journal,
+    LedgerEntry,
 )
 
 CATEGORY_NAMES: dict[str, AccountCategory] = {
@@ -118,4 +120,52 @@ def account_balance(
         opening=opening,
         activity=activity,
         closing=opening + activity,
+    )
+
+
+def account_ledger(
+    journal: Journal,
+    account: Account,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> AccountLedger:
+    """Return chronological postings and running balances for an account."""
+    summary = account_balance(journal, account, from_date, to_date)
+    start = from_date or date(journal.year, 1, 1)
+    end = to_date or date(journal.year, 12, 31)
+    running_balance = summary.opening
+    entries: list[LedgerEntry] = []
+
+    ordered_transactions = sorted(
+        enumerate(journal.transactions),
+        key=lambda item: (item[1].date, item[0]),
+    )
+
+    for _, transaction in ordered_transactions:
+        if not start <= transaction.date <= end:
+            continue
+
+        for posting in transaction.postings:
+            is_selected = (
+                posting.account.category == account.category
+                and posting.account.path[: len(account.path)] == account.path
+            )
+            if not is_selected:
+                continue
+
+            running_balance += posting.amount
+            entries.append(
+                LedgerEntry(
+                    date=transaction.date,
+                    description=transaction.description,
+                    account=posting.account,
+                    amount=posting.amount,
+                    balance=running_balance,
+                )
+            )
+
+    return AccountLedger(
+        opening=summary.opening,
+        entries=entries,
+        closing=summary.closing,
     )

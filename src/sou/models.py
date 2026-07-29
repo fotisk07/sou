@@ -48,3 +48,19 @@ class AccountBalance:
     opening: Decimal
     activity: Decimal
     closing: Decimal
+
+
+@dataclass(frozen=True)
+class LedgerEntry:
+    date: date
+    description: str
+    account: Account
+    amount: Decimal
+    balance: Decimal
+
+
+@dataclass(frozen=True)
+class AccountLedger:
+    opening: Decimal
+    entries: list[LedgerEntry]
+    closing: Decimal

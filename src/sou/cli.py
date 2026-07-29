@@ -3,11 +3,13 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import click
+from prettytable import PrettyTable
 
 from sou.accounts import (
     CATEGORY_NAMES,
     AccountError,
     account_balance,
+    account_ledger,
     add_account,
     resolve_account,
 )
@@ -209,3 +211,93 @@ def balance(
     click.echo(f"Opening:  {format(opening, 'f')}")
     click.echo(f"Activity:  {format(activity, 'f')}")
     click.echo(f"Closing:  {format(closing, 'f')}")
+
+
+@cli.command()
+@click.argument("account_reference")
+@click.option("--from", "from_text", help="Start date in MM-DD format.")
+@click.option("--to", "to_text", help="End date in MM-DD format.")
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def ledger(
+    account_reference: str,
+    from_text: str | None,
+    to_text: str | None,
+    journal_path: Path,
+):
+    """Show postings and running balances for ACCOUNT_REFERENCE."""
+    try:
+        journal = load_journal(journal_path)
+
+        try:
+            from_date = (
+                date.fromisoformat(f"{journal.year}-{from_text}") if from_text else None
+            )
+        except ValueError:
+            raise click.ClickException(
+                f"invalid from date '{from_text}'; expected MM-DD"
+            ) from None
+
+        try:
+            to_date = (
+                date.fromisoformat(f"{journal.year}-{to_text}") if to_text else None
+            )
+        except ValueError:
+            raise click.ClickException(
+                f"invalid to date '{to_text}'; expected MM-DD"
+            ) from None
+
+        account = resolve_account(journal, account_reference)
+        result = account_ledger(journal, account, from_date, to_date)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except (AccountError, JournalParseError) as error:
+        raise click.ClickException(str(error)) from None
+
+    sign = (
+        Decimal("-1")
+        if account.category in {"Liabilities", "Equity", "Income"}
+        else Decimal("1")
+    )
+    table = PrettyTable()
+    table.field_names = ["Date", "Account", "Description", "Amount", "Balance"]
+    table.align["Date"] = "l"
+    table.align["Account"] = "l"
+    table.align["Description"] = "l"
+    table.align["Amount"] = "r"
+    table.align["Balance"] = "r"
+
+    if from_text is not None:
+        table.add_row([
+            "",
+            "",
+            "Opening balance",
+            "",
+            format(result.opening * sign, "f"),
+        ])
+
+    for entry in result.entries:
+        table.add_row([
+            entry.date.strftime("%m-%d"),
+            str(entry.account),
+            entry.description,
+            format(entry.amount * sign, "f"),
+            format(entry.balance * sign, "f"),
+        ])
+
+    table.add_row([
+        "",
+        "",
+        "Closing balance",
+        "",
+        format(result.closing * sign, "f"),
+    ])
+
+    click.echo(str(account))
+    click.echo(table)
