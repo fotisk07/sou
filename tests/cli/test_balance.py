@@ -8,7 +8,7 @@ def test_balance_renders_closing_balance(runner, report_journal_path):
     )
 
     assert result.exit_code == 0
-    assert result.output == "Expenses::Food  35\n"
+    assert result.output == "Expenses::Food  35.00\n"
 
 
 def test_balance_maps_date_options_to_range_summary(runner, report_journal_path):
@@ -28,7 +28,7 @@ def test_balance_maps_date_options_to_range_summary(runner, report_journal_path)
 
     assert result.exit_code == 0
     assert result.output == (
-        "Expenses::Food\nOpening:  10\nActivity:  25\nClosing:  35\n"
+        "Expenses::Food\nOpening:  10.00\nActivity:  25.00\nClosing:  35.00\n"
     )
 
 
@@ -39,7 +39,7 @@ def test_balance_renders_natural_income_sign(runner, report_journal_path):
     )
 
     assert result.exit_code == 0
-    assert result.output == "Income::Salary  100\n"
+    assert result.output == "Income::Salary  100.00\n"
 
 
 def test_balance_rejects_invalid_date(runner, report_journal_path):

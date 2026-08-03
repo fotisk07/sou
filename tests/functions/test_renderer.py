@@ -23,8 +23,8 @@ Expenses
 [TRANSACTIONS]
 
 2025-10-02 Just some transaction
-  Assets::Checkings  -100
-  Expenses::Test  100
+  Assets::Checkings  -100.00
+  Expenses::Test  100.00
 """
 
 

@@ -28,10 +28,10 @@ def test_ledger_renders_table_and_maps_date_options(runner, report_journal_path)
     assert result.output.startswith("Expenses::Food\n+")
     assert table_rows(result.output) == [
         ["Date", "Account", "Description", "Amount", "Balance"],
-        ["", "", "Opening balance", "", "10"],
-        ["07-01", "Expenses::Food:Coffee", "Coffee", "5", "15"],
-        ["07-31", "Expenses::Food", "Groceries", "20", "35"],
-        ["", "", "Closing balance", "", "35"],
+        ["", "", "Opening balance", "", "10.00"],
+        ["07-01", "Expenses::Food:Coffee", "Coffee", "5.00", "15.00"],
+        ["07-31", "Expenses::Food", "Groceries", "20.00", "35.00"],
+        ["", "", "Closing balance", "", "35.00"],
     ]
 
 
@@ -43,6 +43,6 @@ def test_ledger_renders_natural_income_sign(runner, report_journal_path):
 
     assert result.exit_code == 0
     assert table_rows(result.output)[-2:] == [
-        ["08-01", "Income::Salary", "Salary", "100", "100"],
-        ["", "", "Closing balance", "", "100"],
+        ["08-01", "Income::Salary", "Salary", "100.00", "100.00"],
+        ["", "", "Closing balance", "", "100.00"],
     ]

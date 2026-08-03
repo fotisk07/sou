@@ -173,6 +173,7 @@ Expenses
 ```
 
 Every transaction must have at least two postings whose amounts sum to zero.
+Amounts are rendered consistently with two decimal places.
 
 ## Current scope
 

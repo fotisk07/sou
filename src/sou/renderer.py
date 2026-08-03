@@ -64,5 +64,5 @@ def _render_accounts(accounts: set[Account]) -> list[str]:
 
 
 def _render_amount(amount: Decimal) -> str:
-    """Render a Decimal without scientific notation."""
-    return format(amount, "f")
+    """Render an amount with two decimal places."""
+    return format(amount, ".2f")
