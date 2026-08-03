@@ -130,6 +130,7 @@ A parent balance includes postings to all of its children:
 
 ```bash
 sou balance e:Food
+sou balance e:Food --month
 sou balance a:Bank:Checking --from 07-01 --to 07-31
 ```
 
@@ -139,6 +140,7 @@ When a date boundary is supplied, Sou displays opening balance, period activity,
 
 ```bash
 sou ledger e:Food
+sou ledger e:Food --month
 sou ledger a:Bank:Checking --from 07-01 --to 07-31
 ```
 

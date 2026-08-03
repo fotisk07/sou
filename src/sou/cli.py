@@ -1,3 +1,4 @@
+from calendar import monthrange
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -18,6 +19,47 @@ from sou.models import Account, Posting, Transaction
 from sou.parser import JournalParseError
 from sou.storage import init_journal, load_journal, save_journal
 from sou.transactions import TransactionError, add_transaction
+
+
+def _report_dates(
+    journal_year: int,
+    from_text: str | None,
+    to_text: str | None,
+    current_month: bool,
+) -> tuple[date | None, date | None]:
+    """Parse report date options and expand --month to its date range."""
+    if current_month:
+        if from_text is not None or to_text is not None:
+            raise click.UsageError("--month cannot be combined with --from or --to")
+
+        today = date.today()
+        if journal_year != today.year:
+            raise click.ClickException(
+                f"current month is outside journal year {journal_year}"
+            )
+
+        return (
+            date(today.year, today.month, 1),
+            date(today.year, today.month, monthrange(today.year, today.month)[1]),
+        )
+
+    try:
+        from_date = (
+            date.fromisoformat(f"{journal_year}-{from_text}") if from_text else None
+        )
+    except ValueError:
+        raise click.ClickException(
+            f"invalid from date '{from_text}'; expected MM-DD"
+        ) from None
+
+    try:
+        to_date = date.fromisoformat(f"{journal_year}-{to_text}") if to_text else None
+    except ValueError:
+        raise click.ClickException(
+            f"invalid to date '{to_text}'; expected MM-DD"
+        ) from None
+
+    return from_date, to_date
 
 
 CATEGORY_PREFIXES = {
@@ -184,6 +226,13 @@ def post(
 @click.option("--from", "from_text", help="Start date in MM-DD format.")
 @click.option("--to", "to_text", help="End date in MM-DD format.")
 @click.option(
+    "-m",
+    "--month",
+    "current_month",
+    is_flag=True,
+    help="Show only the current calendar month.",
+)
+@click.option(
     "-j",
     "--journal",
     "journal_path",
@@ -195,29 +244,16 @@ def balance(
     account_reference: str,
     from_text: str | None,
     to_text: str | None,
+    current_month: bool,
     journal_path: Path,
 ):
     """Show the balance of ACCOUNT_REFERENCE and its descendants."""
     try:
         journal = load_journal(journal_path)
 
-        try:
-            from_date = (
-                date.fromisoformat(f"{journal.year}-{from_text}") if from_text else None
-            )
-        except ValueError:
-            raise click.ClickException(
-                f"invalid from date '{from_text}'; expected MM-DD"
-            ) from None
-
-        try:
-            to_date = (
-                date.fromisoformat(f"{journal.year}-{to_text}") if to_text else None
-            )
-        except ValueError:
-            raise click.ClickException(
-                f"invalid to date '{to_text}'; expected MM-DD"
-            ) from None
+        from_date, to_date = _report_dates(
+            journal.year, from_text, to_text, current_month
+        )
 
         account = resolve_account(journal, account_reference)
         result = account_balance(journal, account, from_date, to_date)
@@ -235,7 +271,7 @@ def balance(
     activity = result.activity * sign
     closing = result.closing * sign
 
-    if from_text is None and to_text is None:
+    if from_text is None and to_text is None and not current_month:
         click.echo(f"{account}  {format(closing, 'f')}")
         return
 
@@ -250,6 +286,13 @@ def balance(
 @click.option("--from", "from_text", help="Start date in MM-DD format.")
 @click.option("--to", "to_text", help="End date in MM-DD format.")
 @click.option(
+    "-m",
+    "--month",
+    "current_month",
+    is_flag=True,
+    help="Show only the current calendar month.",
+)
+@click.option(
     "-j",
     "--journal",
     "journal_path",
@@ -261,29 +304,16 @@ def ledger(
     account_reference: str,
     from_text: str | None,
     to_text: str | None,
+    current_month: bool,
     journal_path: Path,
 ):
     """Show postings and running balances for ACCOUNT_REFERENCE."""
     try:
         journal = load_journal(journal_path)
 
-        try:
-            from_date = (
-                date.fromisoformat(f"{journal.year}-{from_text}") if from_text else None
-            )
-        except ValueError:
-            raise click.ClickException(
-                f"invalid from date '{from_text}'; expected MM-DD"
-            ) from None
-
-        try:
-            to_date = (
-                date.fromisoformat(f"{journal.year}-{to_text}") if to_text else None
-            )
-        except ValueError:
-            raise click.ClickException(
-                f"invalid to date '{to_text}'; expected MM-DD"
-            ) from None
+        from_date, to_date = _report_dates(
+            journal.year, from_text, to_text, current_month
+        )
 
         account = resolve_account(journal, account_reference)
         result = account_ledger(journal, account, from_date, to_date)
@@ -305,7 +335,7 @@ def ledger(
     table.align["Amount"] = "r"
     table.align["Balance"] = "r"
 
-    if from_text is not None:
+    if from_date is not None:
         table.add_row([
             "",
             "",
