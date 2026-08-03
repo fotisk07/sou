@@ -64,3 +64,21 @@ class AccountLedger:
     opening: Decimal
     entries: list[LedgerEntry]
     closing: Decimal
+
+
+@dataclass(frozen=True)
+class ProfitAndLossLine:
+    account: Account
+    direct: Decimal
+    total: Decimal
+
+
+@dataclass(frozen=True)
+class ProfitAndLoss:
+    from_date: date
+    to_date: date
+    income_lines: list[ProfitAndLossLine]
+    expense_lines: list[ProfitAndLossLine]
+    total_income: Decimal
+    total_expenses: Decimal
+    net: Decimal
