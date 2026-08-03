@@ -17,6 +17,7 @@ from sou.accounts import (
 )
 from sou.models import Account, Posting, Transaction
 from sou.parser import JournalParseError
+from sou.renderer import render_accounts
 from sou.storage import init_journal, load_journal, save_journal
 from sou.transactions import TransactionError, add_transaction
 
@@ -149,6 +150,27 @@ def add(category: str, name: str, journal_path: Path):
         raise click.ClickException(f"{journal_path} does not exist") from None
     except (AccountError, JournalParseError) as error:
         raise click.ClickException(str(error)) from None
+
+
+@cli.command("list")
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def list_accounts(journal_path: Path):
+    """List the accounts in the journal."""
+    try:
+        journal = load_journal(journal_path)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except JournalParseError as error:
+        raise click.ClickException(str(error)) from None
+
+    click.echo("\n".join(render_accounts(journal.accounts)))
 
 
 @cli.command()

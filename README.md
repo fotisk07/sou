@@ -91,6 +91,12 @@ sou add e Food
 sou add e Food:Coffee
 ```
 
+View the account tree at any time:
+
+```bash
+sou list
+```
+
 ### Enter opening balances
 
 An existing asset balance flows from equity into the asset:

@@ -14,7 +14,7 @@ def render_sou(journal: Journal) -> str:
         "",
     ]
 
-    lines.extend(_render_accounts(journal.accounts))
+    lines.extend(render_accounts(journal.accounts))
     lines.extend(["", "[TRANSACTIONS]"])
 
     for transaction in journal.transactions:
@@ -28,7 +28,7 @@ def render_sou(journal: Journal) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _render_accounts(accounts: set[Account]) -> list[str]:
+def render_accounts(accounts: set[Account]) -> list[str]:
     """Render accounts as an ordered, indentation-based tree."""
     lines: list[str] = []
 
