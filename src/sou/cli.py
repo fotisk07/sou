@@ -5,7 +5,6 @@ from pathlib import Path
 
 import click
 from click.shell_completion import CompletionItem
-from prettytable import PrettyTable
 
 from sou.accounts import (
     CATEGORY_NAMES,
@@ -15,6 +14,7 @@ from sou.accounts import (
     add_account,
     resolve_account,
 )
+from sou.console import format_balance, format_ledger
 from sou.models import Account, Posting, Transaction
 from sou.parser import JournalParseError
 from sou.renderer import render_accounts
@@ -284,23 +284,8 @@ def balance(
     except (AccountError, JournalParseError) as error:
         raise click.ClickException(str(error)) from None
 
-    sign = (
-        Decimal("-1")
-        if account.category in {"Liabilities", "Equity", "Income"}
-        else Decimal("1")
-    )
-    opening = result.opening * sign
-    activity = result.activity * sign
-    closing = result.closing * sign
-
-    if from_text is None and to_text is None and not current_month:
-        click.echo(f"{account}  {format(closing, 'f')}")
-        return
-
-    click.echo(str(account))
-    click.echo(f"Opening:  {format(opening, 'f')}")
-    click.echo(f"Activity:  {format(activity, 'f')}")
-    click.echo(f"Closing:  {format(closing, 'f')}")
+    detailed = from_text is not None or to_text is not None or current_month
+    click.echo(format_balance(account, result, detailed))
 
 
 @cli.command()
@@ -344,44 +329,4 @@ def ledger(
     except (AccountError, JournalParseError) as error:
         raise click.ClickException(str(error)) from None
 
-    sign = (
-        Decimal("-1")
-        if account.category in {"Liabilities", "Equity", "Income"}
-        else Decimal("1")
-    )
-    table = PrettyTable()
-    table.field_names = ["Date", "Account", "Description", "Amount", "Balance"]
-    table.align["Date"] = "l"
-    table.align["Account"] = "l"
-    table.align["Description"] = "l"
-    table.align["Amount"] = "r"
-    table.align["Balance"] = "r"
-
-    if from_date is not None:
-        table.add_row([
-            "",
-            "",
-            "Opening balance",
-            "",
-            format(result.opening * sign, "f"),
-        ])
-
-    for entry in result.entries:
-        table.add_row([
-            entry.date.strftime("%m-%d"),
-            str(entry.account),
-            entry.description,
-            format(entry.amount * sign, "f"),
-            format(entry.balance * sign, "f"),
-        ])
-
-    table.add_row([
-        "",
-        "",
-        "Closing balance",
-        "",
-        format(result.closing * sign, "f"),
-    ])
-
-    click.echo(str(account))
-    click.echo(table)
+    click.echo(format_ledger(account, result, show_opening=from_date is not None))
