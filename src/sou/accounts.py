@@ -29,6 +29,14 @@ class AccountError(ValueError):
     """Raised when an account cannot be added to or found in a journal."""
 
 
+def account_contains(parent: Account, candidate: Account) -> bool:
+    """Return whether candidate is parent or one of its descendants."""
+    return (
+        candidate.category == parent.category
+        and candidate.path[: len(parent.path)] == parent.path
+    )
+
+
 def resolve_account(journal: Journal, reference: str) -> Account:
     """Resolve a concise or canonical account reference."""
     if "::" in reference:
@@ -104,11 +112,7 @@ def account_balance(
 
     for transaction in journal.transactions:
         for posting in transaction.postings:
-            is_selected = (
-                posting.account.category == account.category
-                and posting.account.path[: len(account.path)] == account.path
-            )
-            if not is_selected:
+            if not account_contains(account, posting.account):
                 continue
 
             if transaction.date < start:
@@ -146,11 +150,7 @@ def account_ledger(
             continue
 
         for posting in transaction.postings:
-            is_selected = (
-                posting.account.category == account.category
-                and posting.account.path[: len(account.path)] == account.path
-            )
-            if not is_selected:
+            if not account_contains(account, posting.account):
                 continue
 
             running_balance += posting.amount
