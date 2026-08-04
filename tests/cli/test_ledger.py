@@ -43,14 +43,14 @@ def test_ledger_renders_table_and_maps_date_options(runner, report_journal_path)
     ]
 
 
-def test_ledger_month_uses_current_calendar_month(
+def test_ledger_defaults_to_current_calendar_month(
     runner, report_journal_path, monkeypatch
 ):
     monkeypatch.setattr(cli, "date", July2025)
 
     result = runner.invoke(
         cli.cli,
-        ["ledger", "e:Food", "-m", "-j", str(report_journal_path)],
+        ["ledger", "e:Food", "-j", str(report_journal_path)],
     )
 
     assert result.exit_code == 0
@@ -65,7 +65,7 @@ def test_ledger_month_uses_current_calendar_month(
 def test_ledger_renders_natural_income_sign(runner, report_journal_path):
     result = runner.invoke(
         cli.cli,
-        ["ledger", "i:Salary", "-j", str(report_journal_path)],
+        ["ledger", "i:Salary", "--all", "-j", str(report_journal_path)],
     )
 
     assert result.exit_code == 0

@@ -12,7 +12,7 @@ class July2025(date):
 def test_balance_renders_closing_balance(runner, report_journal_path):
     result = runner.invoke(
         cli.cli,
-        ["balance", "e:Food", "-j", str(report_journal_path)],
+        ["balance", "e:Food", "--all", "-j", str(report_journal_path)],
     )
 
     assert result.exit_code == 0
@@ -40,14 +40,14 @@ def test_balance_maps_date_options_to_range_summary(runner, report_journal_path)
     )
 
 
-def test_balance_month_uses_current_calendar_month(
+def test_balance_defaults_to_current_calendar_month(
     runner, report_journal_path, monkeypatch
 ):
     monkeypatch.setattr(cli, "date", July2025)
 
     result = runner.invoke(
         cli.cli,
-        ["balance", "e:Food", "--month", "-j", str(report_journal_path)],
+        ["balance", "e:Food", "-j", str(report_journal_path)],
     )
 
     assert result.exit_code == 0
@@ -59,7 +59,7 @@ def test_balance_month_uses_current_calendar_month(
 def test_balance_renders_natural_income_sign(runner, report_journal_path):
     result = runner.invoke(
         cli.cli,
-        ["balance", "i:Salary", "-j", str(report_journal_path)],
+        ["balance", "i:Salary", "--all", "-j", str(report_journal_path)],
     )
 
     assert result.exit_code == 0
