@@ -132,25 +132,54 @@ The date defaults to today. Explicit dates use `MM-DD`; the journal already supp
 
 ### Check a balance
 
-A parent balance includes postings to all of its children:
+A parent balance includes postings to all of its children. Reports default to
+the current month:
 
 ```bash
 sou balance e:Food
-sou balance e:Food --month
+sou balance e:Food --quarter
+sou balance e:Food --all
 sou balance a:Bank:Checking --from 07-01 --to 07-31
 ```
 
-When a date boundary is supplied, Sou displays opening balance, period activity, and closing balance.
+Period balances show the opening balance, activity, and closing balance.
 
 ### Inspect an account ledger
 
 ```bash
 sou ledger e:Food
-sou ledger e:Food --month
+sou ledger e:Food --quarter
+sou ledger e:Food --all
 sou ledger a:Bank:Checking --from 07-01 --to 07-31
 ```
 
 The ledger displays matching postings and a running balance.
+
+### View profit and loss
+
+```bash
+sou pnl
+sou pnl --quarter
+sou pnl --all
+sou pnl --from 07-01 --to 09-30
+sou pnl --depth 2
+```
+
+Profit and loss reports Income, Expenses, and the resulting profit or loss.
+The default depth shows top-level accounts with activity from all descendants.
+
+### View the balance sheet
+
+```bash
+sou bs
+sou bs --at 08-31
+sou bs --depth 2
+```
+
+The balance sheet shows Assets, Liabilities, and Net Worth at a point in time.
+Net Worth includes opening Equity accounts and the current year's Income minus
+Expenses. Transfers between asset accounts, such as moving money into savings,
+do not change Net Worth.
 
 ## Journal format
 
@@ -190,6 +219,7 @@ Amounts are rendered consistently with two decimal places.
 - Two-account transaction entry through `sou post`
 - Hierarchical accounts with rolled-up balances
 - Account balance and ledger queries
+- Profit and loss and balance sheet reports
 
 The underlying model supports transactions with more than two postings, but split-entry CLI automation is not implemented yet.
 
