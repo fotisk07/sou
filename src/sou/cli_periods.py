@@ -38,6 +38,27 @@ def report_period_options(function):
     )(function)
 
 
+def resolve_report_date(
+    journal_year: int,
+    at_text: str | None,
+    today: date,
+) -> date:
+    """Resolve an optional MM-DD value for a point-in-time report."""
+    if at_text is None:
+        if today.year != journal_year:
+            raise click.ClickException(
+                f"current date is outside journal year {journal_year}; use --at"
+            )
+        return today
+
+    try:
+        return date.fromisoformat(f"{journal_year}-{at_text}")
+    except ValueError:
+        raise click.ClickException(
+            f"invalid date '{at_text}'; expected MM-DD"
+        ) from None
+
+
 def resolve_report_dates(
     journal_year: int,
     from_text: str | None,

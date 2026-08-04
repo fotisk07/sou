@@ -13,8 +13,18 @@ from sou.accounts import (
     add_account,
     resolve_account,
 )
-from sou.cli_periods import report_period_options, resolve_report_dates
-from sou.console import format_balance, format_ledger, format_profit_and_loss
+from sou.balance_sheet import BalanceSheetError, balance_sheet
+from sou.cli_periods import (
+    report_period_options,
+    resolve_report_date,
+    resolve_report_dates,
+)
+from sou.console import (
+    format_balance,
+    format_balance_sheet,
+    format_ledger,
+    format_profit_and_loss,
+)
 from sou.models import Account, Posting, Transaction
 from sou.parser import JournalParseError
 from sou.pnl import ProfitAndLossError, profit_and_loss
@@ -337,3 +347,34 @@ def pnl(
         raise click.ClickException(str(error)) from None
 
     click.echo(format_profit_and_loss(report, depth))
+
+
+@cli.command()
+@click.option("--at", "at_text", help="Balance sheet date in MM-DD format.")
+@click.option(
+    "--depth",
+    type=click.IntRange(min=0),
+    default=1,
+    show_default=True,
+    help="Number of account levels to display.",
+)
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def bs(at_text: str | None, depth: int, journal_path: Path):
+    """Show assets, liabilities, and net worth."""
+    try:
+        journal = load_journal(journal_path)
+        at_date = resolve_report_date(journal.year, at_text, date.today())
+        report = balance_sheet(journal, at_date)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except (BalanceSheetError, JournalParseError) as error:
+        raise click.ClickException(str(error)) from None
+
+    click.echo(format_balance_sheet(report, depth))
