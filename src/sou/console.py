@@ -88,7 +88,7 @@ def _format_report_amount(amount: Decimal) -> str:
     return f"{amount:,.2f}"
 
 
-def _add_profit_and_loss_section(
+def _add_account_report_section(
     table: PrettyTable,
     name: str,
     lines: list[AccountReportLine],
@@ -144,14 +144,14 @@ def format_profit_and_loss(report: ProfitAndLoss, depth: int = 1) -> str:
     table.align["Account"] = "l"
     table.align["Amount"] = "r"
 
-    _add_profit_and_loss_section(
+    _add_account_report_section(
         table,
         "INCOME",
         report.income_lines,
         report.total_income,
         depth,
     )
-    _add_profit_and_loss_section(
+    _add_account_report_section(
         table,
         "EXPENSES",
         report.expense_lines,
