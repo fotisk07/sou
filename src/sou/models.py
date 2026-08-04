@@ -82,3 +82,18 @@ class ProfitAndLoss:
     total_income: Decimal
     total_expenses: Decimal
     net: Decimal
+
+
+@dataclass(frozen=True)
+class BalanceSheet:
+    at_date: date
+    asset_lines: list[AccountReportLine]
+    liability_lines: list[AccountReportLine]
+    equity_lines: list[AccountReportLine]
+    total_assets: Decimal
+    total_liabilities: Decimal
+    equity_account_total: Decimal
+    current_year_result: Decimal
+    total_net_worth: Decimal
+    total_liabilities_and_net_worth: Decimal
+    difference: Decimal
