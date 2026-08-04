@@ -6,8 +6,8 @@ from sou.models import (
     Account,
     AccountBalance,
     AccountLedger,
+    AccountReportLine,
     ProfitAndLoss,
-    ProfitAndLossLine,
 )
 
 
@@ -91,14 +91,14 @@ def _format_report_amount(amount: Decimal) -> str:
 def _add_profit_and_loss_section(
     table: PrettyTable,
     name: str,
-    lines: list[ProfitAndLossLine],
+    lines: list[AccountReportLine],
     total: Decimal,
     depth: int,
 ) -> None:
     if depth > 0:
         table.add_row([name, ""])
 
-        def add_line(line: ProfitAndLossLine) -> None:
+        def add_line(line: AccountReportLine) -> None:
             indentation = "  " * len(line.account.path)
             table.add_row([
                 f"{indentation}{line.account.path[-1]}",

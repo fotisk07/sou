@@ -67,7 +67,7 @@ class AccountLedger:
 
 
 @dataclass(frozen=True)
-class ProfitAndLossLine:
+class AccountReportLine:
     account: Account
     direct: Decimal
     total: Decimal
@@ -77,8 +77,8 @@ class ProfitAndLossLine:
 class ProfitAndLoss:
     from_date: date
     to_date: date
-    income_lines: list[ProfitAndLossLine]
-    expense_lines: list[ProfitAndLossLine]
+    income_lines: list[AccountReportLine]
+    expense_lines: list[AccountReportLine]
     total_income: Decimal
     total_expenses: Decimal
     net: Decimal

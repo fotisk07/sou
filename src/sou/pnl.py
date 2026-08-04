@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from sou.accounts import account_contains
-from sou.models import Journal, ProfitAndLoss, ProfitAndLossLine
+from sou.models import AccountReportLine, Journal, ProfitAndLoss
 
 
 class ProfitAndLossError(ValueError):
@@ -45,13 +45,13 @@ def profit_and_loss(
             else:
                 direct_activity[posting.account] += posting.amount
 
-    def lines_for(category: str) -> list[ProfitAndLossLine]:
+    def lines_for(category: str) -> list[AccountReportLine]:
         accounts = sorted(
             (account for account in report_accounts if account.category == category),
             key=lambda account: tuple(part.casefold() for part in account.path),
         )
         return [
-            ProfitAndLossLine(
+            AccountReportLine(
                 account=account,
                 direct=direct_activity[account],
                 total=sum(
