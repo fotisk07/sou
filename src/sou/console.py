@@ -2,7 +2,13 @@ from decimal import Decimal
 
 from prettytable import PrettyTable
 
-from sou.models import Account, AccountBalance, AccountLedger
+from sou.models import (
+    Account,
+    AccountBalance,
+    AccountLedger,
+    ProfitAndLoss,
+    ProfitAndLossLine,
+)
 
 
 def _display_sign(account: Account) -> Decimal:
@@ -76,3 +82,85 @@ def format_ledger(
     ])
 
     return f"{account}\n{table}"
+
+
+def _format_report_amount(amount: Decimal) -> str:
+    return f"{amount:,.2f}"
+
+
+def _add_profit_and_loss_section(
+    table: PrettyTable,
+    name: str,
+    lines: list[ProfitAndLossLine],
+    total: Decimal,
+    depth: int,
+) -> None:
+    if depth > 0:
+        table.add_row([name, ""])
+
+        def add_line(line: ProfitAndLossLine) -> None:
+            indentation = "  " * len(line.account.path)
+            table.add_row([
+                f"{indentation}{line.account.path[-1]}",
+                _format_report_amount(line.total),
+            ])
+
+            if len(line.account.path) >= depth:
+                return
+
+            children = [
+                candidate
+                for candidate in lines
+                if candidate.total != 0
+                and candidate.account.category == line.account.category
+                and candidate.account.path[:-1] == line.account.path
+            ]
+            if line.direct != 0 and children:
+                table.add_row([
+                    f"{'  ' * (len(line.account.path) + 1)}(direct)",
+                    _format_report_amount(line.direct),
+                ])
+
+            for child in children:
+                add_line(child)
+
+        for line in lines:
+            if len(line.account.path) == 1 and line.total != 0:
+                add_line(line)
+
+    table.add_row(
+        [f"TOTAL {name}", _format_report_amount(total)],
+        divider=True,
+    )
+
+
+def format_profit_and_loss(report: ProfitAndLoss, depth: int = 1) -> str:
+    """Format a profit and loss report for display in the command line."""
+    if depth < 0:
+        raise ValueError("profit and loss depth cannot be negative")
+
+    table = PrettyTable()
+    table.field_names = ["Account", "Amount"]
+    table.align["Account"] = "l"
+    table.align["Amount"] = "r"
+
+    _add_profit_and_loss_section(
+        table,
+        "INCOME",
+        report.income_lines,
+        report.total_income,
+        depth,
+    )
+    _add_profit_and_loss_section(
+        table,
+        "EXPENSES",
+        report.expense_lines,
+        report.total_expenses,
+        depth,
+    )
+
+    net_name = "NET PROFIT" if report.net >= 0 else "NET LOSS"
+    table.add_row([net_name, _format_report_amount(abs(report.net))])
+
+    heading = f"Profit and Loss — {report.from_date} to {report.to_date}"
+    return f"{heading}\n\n{table}"

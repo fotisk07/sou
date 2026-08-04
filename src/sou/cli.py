@@ -14,9 +14,10 @@ from sou.accounts import (
     add_account,
     resolve_account,
 )
-from sou.console import format_balance, format_ledger
+from sou.console import format_balance, format_ledger, format_profit_and_loss
 from sou.models import Account, Posting, Transaction
 from sou.parser import JournalParseError
+from sou.pnl import ProfitAndLossError, profit_and_loss
 from sou.renderer import render_accounts
 from sou.storage import init_journal, load_journal, save_journal
 from sou.transactions import TransactionError, add_transaction
@@ -330,3 +331,50 @@ def ledger(
         raise click.ClickException(str(error)) from None
 
     click.echo(format_ledger(account, result, show_opening=from_date is not None))
+
+
+@cli.command()
+@click.option("--from", "from_text", help="Start date in MM-DD format.")
+@click.option("--to", "to_text", help="End date in MM-DD format.")
+@click.option(
+    "-m",
+    "--month",
+    "current_month",
+    is_flag=True,
+    help="Show only the current calendar month.",
+)
+@click.option(
+    "--depth",
+    type=click.IntRange(min=0),
+    default=1,
+    show_default=True,
+    help="Number of account levels to display.",
+)
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def pnl(
+    from_text: str | None,
+    to_text: str | None,
+    current_month: bool,
+    depth: int,
+    journal_path: Path,
+):
+    """Show income, expenses, and net profit."""
+    try:
+        journal = load_journal(journal_path)
+        from_date, to_date = _report_dates(
+            journal.year, from_text, to_text, current_month
+        )
+        report = profit_and_loss(journal, from_date, to_date)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except (JournalParseError, ProfitAndLossError) as error:
+        raise click.ClickException(str(error)) from None
+
+    click.echo(format_profit_and_loss(report, depth))
