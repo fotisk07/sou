@@ -7,6 +7,7 @@ from sou.models import (
     AccountBalance,
     AccountLedger,
     AccountReportLine,
+    BalanceSheet,
     ProfitAndLoss,
 )
 
@@ -94,6 +95,7 @@ def _add_account_report_section(
     lines: list[AccountReportLine],
     total: Decimal,
     depth: int,
+    extra_rows: tuple[tuple[str, Decimal], ...] = (),
 ) -> None:
     if depth > 0:
         table.add_row([name, ""])
@@ -127,6 +129,10 @@ def _add_account_report_section(
         for line in lines:
             if len(line.account.path) == 1 and line.total != 0:
                 add_line(line)
+
+        for label, amount in extra_rows:
+            if amount != 0:
+                table.add_row([f"  {label}", _format_report_amount(amount)])
 
     table.add_row(
         [f"TOTAL {name}", _format_report_amount(total)],
@@ -163,4 +169,48 @@ def format_profit_and_loss(report: ProfitAndLoss, depth: int = 1) -> str:
     table.add_row([net_name, _format_report_amount(abs(report.net))])
 
     heading = f"Profit and Loss — {report.from_date} to {report.to_date}"
+    return f"{heading}\n\n{table}"
+
+
+def format_balance_sheet(report: BalanceSheet, depth: int = 1) -> str:
+    """Format a balance sheet for display in the command line."""
+    if depth < 0:
+        raise ValueError("balance sheet depth cannot be negative")
+
+    table = PrettyTable()
+    table.field_names = ["Account", "Amount"]
+    table.align["Account"] = "l"
+    table.align["Amount"] = "r"
+
+    _add_account_report_section(
+        table,
+        "ASSETS",
+        report.asset_lines,
+        report.total_assets,
+        depth,
+    )
+    _add_account_report_section(
+        table,
+        "LIABILITIES",
+        report.liability_lines,
+        report.total_liabilities,
+        depth,
+    )
+    _add_account_report_section(
+        table,
+        "NET WORTH",
+        report.equity_lines,
+        report.total_net_worth,
+        depth,
+        extra_rows=(("Current year result", report.current_year_result),),
+    )
+    table.add_row([
+        "TOTAL LIABILITIES AND NET WORTH",
+        _format_report_amount(report.total_liabilities_and_net_worth),
+    ])
+
+    if report.difference != 0:
+        table.add_row(["DIFFERENCE", _format_report_amount(report.difference)])
+
+    heading = f"Balance Sheet — {report.at_date}"
     return f"{heading}\n\n{table}"
