@@ -136,6 +136,16 @@ sou post 2000 i:Salary a:Bank:Checking July salary -d 07-31
 
 The date defaults to today. Explicit dates use `MM-DD`; the journal already supplies the year.
 
+For a transaction with more than two postings, provide signed account and
+amount pairs whose amounts sum to zero. Quote a description containing spaces:
+
+```bash
+sou split "Mixed food order" \
+  a:Bank:Checking -28 \
+  e:Food 25 \
+  e:Food:Coffee 3
+```
+
 ### Check a balance
 
 A parent balance includes postings to all of its children. Reports default to
@@ -222,12 +232,10 @@ Amounts are rendered consistently with two decimal places.
 
 - One year per journal
 - One implicit currency
-- Two-account transaction entry through `sou post`
+- Quick two-account entry through `sou post` and split entry through `sou split`
 - Hierarchical accounts with rolled-up balances
 - Account balance and ledger queries
 - Profit and loss and balance sheet reports
-
-The underlying model supports transactions with more than two postings, but split-entry CLI automation is not implemented yet.
 
 ## Development
 

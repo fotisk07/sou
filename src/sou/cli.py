@@ -234,6 +234,77 @@ def post(
         raise click.ClickException(str(error)) from None
 
 
+@cli.command(context_settings={"ignore_unknown_options": True})
+@click.argument("description")
+@click.argument("posting_values", nargs=-1, required=True)
+@click.option(
+    "-d",
+    "--date",
+    "date_text",
+    help="Transaction date in MM-DD format. Defaults to today.",
+)
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def split(
+    description: str,
+    posting_values: tuple[str, ...],
+    date_text: str | None,
+    journal_path: Path,
+):
+    """Post a transaction with multiple ACCOUNT AMOUNT pairs.
+
+    Amounts are signed and must sum to zero. Quote DESCRIPTION if it contains
+    spaces, for example: sou split "Mixed shopping" a:Bank -12 e:Food 12
+    """
+    if len(posting_values) % 2:
+        raise click.ClickException("each account must be followed by an amount")
+    if len(posting_values) < 4:
+        raise click.ClickException("a split transaction requires at least two postings")
+
+    try:
+        journal = load_journal(journal_path)
+        if date_text:
+            try:
+                transaction_date = date.fromisoformat(f"{journal.year}-{date_text}")
+            except ValueError:
+                raise click.ClickException(
+                    f"invalid date '{date_text}'; expected MM-DD"
+                ) from None
+        else:
+            transaction_date = date.today()
+
+        postings = []
+        for account_reference, amount_text in zip(
+            posting_values[::2], posting_values[1::2], strict=True
+        ):
+            account = resolve_account(journal, account_reference)
+            try:
+                amount = Decimal(amount_text)
+            except InvalidOperation:
+                raise click.ClickException(
+                    f"invalid amount '{amount_text}' for account '{account_reference}'"
+                ) from None
+            postings.append(Posting(account=account, amount=amount))
+
+        transaction = Transaction(
+            date=transaction_date,
+            description=description,
+            postings=postings,
+        )
+        add_transaction(journal, transaction)
+        save_journal(journal_path, journal)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except (AccountError, JournalParseError, TransactionError) as error:
+        raise click.ClickException(str(error)) from None
+
+
 @cli.command()
 @click.argument("account_reference", shell_complete=complete_account)
 @report_period_options
