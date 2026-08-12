@@ -97,6 +97,12 @@ View the account tree at any time:
 sou list
 ```
 
+Validate the journal without running a report:
+
+```bash
+sou check
+```
+
 ### Enter opening balances
 
 An existing asset balance flows from equity into the asset:

@@ -144,6 +144,27 @@ def list_accounts(journal_path: Path):
 
 
 @cli.command()
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def check(journal_path: Path):
+    """Validate a journal."""
+    try:
+        load_journal(journal_path)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except JournalParseError as error:
+        raise click.ClickException(str(error)) from None
+
+    click.echo(f"{journal_path} is valid")
+
+
+@cli.command()
 @click.argument("amount")
 @click.argument("source", shell_complete=complete_account)
 @click.argument("target", shell_complete=complete_account)
