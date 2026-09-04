@@ -27,7 +27,9 @@ def test_ledger_renders_table_and_maps_date_options(runner, report_journal_path)
     )
 
     assert result.exit_code == 0
-    assert result.output.startswith("Expenses::Food\n+")
+    assert result.output.startswith(
+        "Ledger — Expenses::Food — 2025-07-01 to 2025-07-31\n\n+"
+    )
     assert table_rows(result.output) == [
         ["Date", "Account", "Description", "Amount", "Balance"],
         ["", "", "Opening balance", "", "10.00"],
@@ -48,6 +50,9 @@ def test_ledger_defaults_to_current_calendar_month(
     )
 
     assert result.exit_code == 0
+    assert result.output.startswith(
+        "Ledger — Expenses::Food — 2025-07-01 to 2025-07-31\n"
+    )
     assert table_rows(result.output)[1:] == [
         ["", "", "Opening balance", "", "10.00"],
         ["07-01", "Expenses::Food:Coffee", "Coffee", "5.00", "15.00"],
@@ -63,6 +68,9 @@ def test_ledger_accepts_a_quarter_number(runner, report_journal_path):
     )
 
     assert result.exit_code == 0
+    assert result.output.startswith(
+        "Ledger — Income::Salary — 2025-07-01 to 2025-09-30\n"
+    )
     assert table_rows(result.output)[1:] == [
         ["", "", "Opening balance", "", "-0"],
         ["08-01", "Income::Salary", "Salary", "100.00", "100.00"],
@@ -77,6 +85,9 @@ def test_ledger_renders_natural_income_sign(runner, report_journal_path):
     )
 
     assert result.exit_code == 0
+    assert result.output.startswith(
+        "Ledger — Income::Salary — 2025-01-01 to 2025-12-31\n"
+    )
     assert table_rows(result.output)[-2:] == [
         ["08-01", "Income::Salary", "Salary", "100.00", "100.00"],
         ["", "", "Closing balance", "", "100.00"],

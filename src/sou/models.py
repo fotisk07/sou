@@ -44,6 +44,8 @@ class Journal:
 
 @dataclass(frozen=True)
 class AccountBalance:
+    from_date: date
+    to_date: date
     opening: Decimal
     activity: Decimal
     closing: Decimal
@@ -60,6 +62,8 @@ class LedgerEntry:
 
 @dataclass(frozen=True)
 class AccountLedger:
+    from_date: date
+    to_date: date
     opening: Decimal
     entries: list[LedgerEntry]
     closing: Decimal

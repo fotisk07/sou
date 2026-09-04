@@ -48,6 +48,8 @@ def test_balance_for_leaf_account_only_includes_that_account():
     balance = account_balance(journal, COFFEE)
 
     assert balance == AccountBalance(
+        from_date=date(2025, 1, 1),
+        to_date=date(2025, 12, 31),
         opening=Decimal(0),
         activity=Decimal(25),
         closing=Decimal(25),
@@ -91,6 +93,8 @@ def test_balance_range_has_opening_activity_and_closing():
     )
 
     assert balance == AccountBalance(
+        from_date=date(2025, 10, 1),
+        to_date=date(2025, 10, 31),
         opening=Decimal(10),
         activity=Decimal(50),
         closing=Decimal(60),
@@ -112,6 +116,8 @@ def test_balance_supports_only_from_date():
     )
 
     assert balance == AccountBalance(
+        from_date=date(2025, 10, 31),
+        to_date=date(2025, 12, 31),
         opening=Decimal(30),
         activity=Decimal(70),
         closing=Decimal(100),
@@ -132,6 +138,8 @@ def test_balance_supports_only_to_date():
     )
 
     assert balance == AccountBalance(
+        from_date=date(2025, 1, 1),
+        to_date=date(2025, 10, 1),
         opening=Decimal(0),
         activity=Decimal(30),
         closing=Decimal(30),
@@ -142,6 +150,8 @@ def test_balance_without_postings_returns_decimal_zeros():
     balance = account_balance(journal_with(), UNUSED)
 
     assert balance == AccountBalance(
+        from_date=date(2025, 1, 1),
+        to_date=date(2025, 12, 31),
         opening=Decimal(0),
         activity=Decimal(0),
         closing=Decimal(0),

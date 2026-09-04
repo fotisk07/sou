@@ -52,6 +52,8 @@ def test_account_ledger_includes_descendants_and_orders_entries_by_date():
     )
 
     assert ledger == AccountLedger(
+        from_date=date(2025, 10, 1),
+        to_date=date(2025, 10, 31),
         opening=Decimal(5),
         entries=[
             LedgerEntry(

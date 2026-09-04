@@ -10,7 +10,9 @@ def test_balance_renders_closing_balance(runner, report_journal_path):
     )
 
     assert result.exit_code == 0
-    assert result.output == "Expenses::Food  35.00\n"
+    assert result.output == (
+        "Balance — Expenses::Food — 2025-01-01 to 2025-12-31\nClosing:  35.00\n"
+    )
 
 
 def test_balance_maps_date_options_to_range_summary(runner, report_journal_path):
@@ -30,7 +32,8 @@ def test_balance_maps_date_options_to_range_summary(runner, report_journal_path)
 
     assert result.exit_code == 0
     assert result.output == (
-        "Expenses::Food\nOpening:  10.00\nActivity:  25.00\nClosing:  35.00\n"
+        "Balance — Expenses::Food — 2025-07-01 to 2025-07-31\n"
+        "Opening:  10.00\nActivity:  25.00\nClosing:  35.00\n"
     )
 
 
@@ -46,7 +49,8 @@ def test_balance_defaults_to_current_calendar_month(
 
     assert result.exit_code == 0
     assert result.output == (
-        "Expenses::Food\nOpening:  10.00\nActivity:  25.00\nClosing:  35.00\n"
+        "Balance — Expenses::Food — 2025-07-01 to 2025-07-31\n"
+        "Opening:  10.00\nActivity:  25.00\nClosing:  35.00\n"
     )
 
 
@@ -58,7 +62,8 @@ def test_balance_accepts_a_month_number(runner, report_journal_path):
 
     assert result.exit_code == 0
     assert result.output == (
-        "Expenses::Food\nOpening:  0\nActivity:  10.00\nClosing:  10.00\n"
+        "Balance — Expenses::Food — 2025-06-01 to 2025-06-30\n"
+        "Opening:  0\nActivity:  10.00\nClosing:  10.00\n"
     )
 
 
@@ -69,7 +74,9 @@ def test_balance_renders_natural_income_sign(runner, report_journal_path):
     )
 
     assert result.exit_code == 0
-    assert result.output == "Income::Salary  100.00\n"
+    assert result.output == (
+        "Balance — Income::Salary — 2025-01-01 to 2025-12-31\nClosing:  100.00\n"
+    )
 
 
 def test_balance_rejects_month_with_explicit_range(runner, report_journal_path):

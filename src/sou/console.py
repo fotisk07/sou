@@ -29,12 +29,13 @@ def format_balance(
     opening = result.opening * sign
     activity = result.activity * sign
     closing = result.closing * sign
+    heading = f"Balance — {account} — {result.from_date} to {result.to_date}"
 
     if not detailed:
-        return f"{account}  {format(closing, 'f')}"
+        return f"{heading}\nClosing:  {format(closing, 'f')}"
 
     return "\n".join([
-        str(account),
+        heading,
         f"Opening:  {format(opening, 'f')}",
         f"Activity:  {format(activity, 'f')}",
         f"Closing:  {format(closing, 'f')}",
@@ -82,7 +83,8 @@ def format_ledger(
         format(result.closing * sign, "f"),
     ])
 
-    return f"{account}\n{table}"
+    heading = f"Ledger — {account} — {result.from_date} to {result.to_date}"
+    return f"{heading}\n\n{table}"
 
 
 def _format_report_amount(amount: Decimal) -> str:

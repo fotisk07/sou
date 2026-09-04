@@ -121,6 +121,8 @@ def account_balance(
                 activity += posting.amount
 
     return AccountBalance(
+        from_date=start,
+        to_date=end,
         opening=opening,
         activity=activity,
         closing=opening + activity,
@@ -165,6 +167,8 @@ def account_ledger(
             )
 
     return AccountLedger(
+        from_date=start,
+        to_date=end,
         opening=summary.opening,
         entries=entries,
         closing=summary.closing,
