@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from sou.models import Account, Posting, Transaction
+from sou.models import Account, Posting, RecurringTransaction, Transaction
 from sou.parser import JournalParseError, parse_sou
 
 EXAMPLE_SOU = """[JOURNAL]
@@ -65,6 +65,63 @@ def test_parse_transactions():
             ],
         )
     ]
+
+
+def test_parse_recurring_transactions():
+    source = EXAMPLE_SOU.replace(
+        "[TRANSACTIONS]",
+        """[RECURRING]
+
+monthly 2025-01-31 Monthly allocation
+  next: 2025-03-31
+  Assets::Checkings  -100
+  Expenses::Test  60
+  Liabilities::Test  40
+
+[TRANSACTIONS]""",
+    )
+
+    journal = parse_sou(source)
+
+    assert journal.recurring_transactions == [
+        RecurringTransaction(
+            frequency="monthly",
+            start_date=date(2025, 1, 31),
+            next_date=date(2025, 3, 31),
+            description="Monthly allocation",
+            postings=[
+                Posting(
+                    account=Account(category="Assets", path=("Checkings",)),
+                    amount=Decimal(-100),
+                ),
+                Posting(
+                    account=Account(category="Expenses", path=("Test",)),
+                    amount=Decimal(60),
+                ),
+                Posting(
+                    account=Account(category="Liabilities", path=("Test",)),
+                    amount=Decimal(40),
+                ),
+            ],
+        )
+    ]
+
+
+def test_recurring_next_date_defaults_to_start_date():
+    source = EXAMPLE_SOU.replace(
+        "[TRANSACTIONS]",
+        """[RECURRING]
+
+weekly 2025-01-03 Allowance
+  Assets::Checkings  -10
+  Expenses::Test  10
+
+[TRANSACTIONS]""",
+    )
+
+    recurring = parse_sou(source).recurring_transactions[0]
+
+    assert recurring.next_date == recurring.start_date
 
 
 def test_multiple_postings():

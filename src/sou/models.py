@@ -1,9 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 from typing import Literal
 
 AccountCategory = Literal["Assets", "Liabilities", "Equity", "Income", "Expenses"]
+RecurrenceFrequency = Literal["daily", "weekly", "monthly"]
 ACCOUNT_CATEGORIES: tuple[AccountCategory, ...] = (
     "Assets",
     "Liabilities",
@@ -36,10 +37,20 @@ class Transaction:
 
 
 @dataclass
+class RecurringTransaction:
+    frequency: RecurrenceFrequency
+    start_date: date
+    next_date: date
+    description: str
+    postings: list[Posting]
+
+
+@dataclass
 class Journal:
     year: int
     accounts: set[Account]
     transactions: list[Transaction]
+    recurring_transactions: list[RecurringTransaction] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

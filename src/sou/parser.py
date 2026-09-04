@@ -1,19 +1,25 @@
 import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from typing import cast
 
 from sou.models import (
     ACCOUNT_CATEGORIES,
     Account,
     Journal,
     Posting,
+    RecurrenceFrequency,
+    RecurringTransaction,
     Transaction,
 )
 
-SECTIONS = ("JOURNAL", "ACCOUNTS", "TRANSACTIONS")
+REQUIRED_SECTIONS = ("JOURNAL", "ACCOUNTS", "TRANSACTIONS")
+SECTIONS = (*REQUIRED_SECTIONS, "RECURRING")
 YEAR_PATTERN = re.compile(r"year:\s*(\d{4})")
 SECTION_PATTERN = re.compile(r"\[(.+)]")
 TRANSACTION_PATTERN = re.compile(r"(\d{4}-\d{2}-\d{2})\s+(.+)")
+RECURRING_PATTERN = re.compile(r"(daily|weekly|monthly)\s+(\d{4}-\d{2}-\d{2})\s+(.+)")
+NEXT_DATE_PATTERN = re.compile(r" {2}next:\s*(\d{4}-\d{2}-\d{2})")
 POSTING_PATTERN = re.compile(r" {2}(\S(?:.*\S)?)\s+([+-]?\d+(?:\.\d+)?)")
 
 
@@ -60,7 +66,7 @@ def parse_sou(source: str) -> Journal:
         sections[current_section].append((line_number, line))
 
     # All sections must exist, even when they contain no accounts or transactions.
-    missing_sections = set(SECTIONS) - seen_sections
+    missing_sections = set(REQUIRED_SECTIONS) - seen_sections
     if missing_sections:
         missing = ", ".join(sorted(missing_sections))
         raise JournalParseError(f"missing sections: {missing}")
@@ -70,8 +76,14 @@ def parse_sou(source: str) -> Journal:
     year = _parse_year(sections["JOURNAL"])
     accounts = _parse_accounts(sections["ACCOUNTS"])
     transactions = _parse_transactions(sections["TRANSACTIONS"], accounts, year)
+    recurring_transactions = _parse_recurring(sections["RECURRING"], accounts, year)
 
-    return Journal(year=year, accounts=accounts, transactions=transactions)
+    return Journal(
+        year=year,
+        accounts=accounts,
+        transactions=transactions,
+        recurring_transactions=recurring_transactions,
+    )
 
 
 def _parse_year(lines: list[tuple[int, str]]) -> int:
@@ -207,27 +219,7 @@ def _parse_transactions(
                 f"line {line_number}: posting appears before a transaction"
             )
 
-        # A posting has exactly two leading spaces. The account name may contain
-        # spaces, so the regular expression takes the decimal amount from the end.
-        match = POSTING_PATTERN.fullmatch(line)
-        if not match:
-            raise JournalParseError(f"line {line_number}: expected '  ACCOUNT AMOUNT'")
-
-        account_name, amount_text = match.groups()
-        account = accounts_by_name.get(account_name)
-        if account is None:
-            raise JournalParseError(
-                f"line {line_number}: unknown account '{account_name}'"
-            )
-
-        try:
-            amount = Decimal(amount_text)
-        except InvalidOperation:
-            raise JournalParseError(
-                f"line {line_number}: invalid amount '{amount_text}'"
-            ) from None
-
-        current.postings.append(Posting(account=account, amount=amount))
+        current.postings.append(_parse_posting(line, line_number, accounts_by_name))
 
     # The final transaction has no following heading to trigger completion.
     if current is not None:
@@ -235,6 +227,118 @@ def _parse_transactions(
         transactions.append(current)
 
     return transactions
+
+
+def _parse_recurring(
+    lines: list[tuple[int, str]], accounts: set[Account], year: int
+) -> list[RecurringTransaction]:
+    """Parse recurring transaction templates and their next due dates."""
+    recurring_transactions: list[RecurringTransaction] = []
+    current: RecurringTransaction | None = None
+    current_line = 0
+    next_date_seen = False
+    accounts_by_name = {str(account): account for account in accounts}
+
+    for line_number, line in lines:
+        if not line.startswith(" "):
+            if current is not None:
+                _validate_recurring(current, current_line, year)
+                recurring_transactions.append(current)
+
+            match = RECURRING_PATTERN.fullmatch(line.strip())
+            if not match:
+                raise JournalParseError(
+                    f"line {line_number}: expected 'FREQUENCY YYYY-MM-DD DESCRIPTION'"
+                )
+
+            frequency, start_text, description = match.groups()
+            try:
+                start_date = date.fromisoformat(start_text)
+            except ValueError:
+                raise JournalParseError(
+                    f"line {line_number}: invalid recurring start date '{start_text}'"
+                ) from None
+
+            current = RecurringTransaction(
+                frequency=cast(RecurrenceFrequency, frequency),
+                start_date=start_date,
+                next_date=start_date,
+                description=description,
+                postings=[],
+            )
+            current_line = line_number
+            next_date_seen = False
+            continue
+
+        if current is None:
+            raise JournalParseError(
+                f"line {line_number}: recurring detail appears before a template"
+            )
+
+        next_match = NEXT_DATE_PATTERN.fullmatch(line)
+        if next_match:
+            if next_date_seen:
+                raise JournalParseError(
+                    f"line {line_number}: duplicate recurring next date"
+                )
+            try:
+                current.next_date = date.fromisoformat(next_match.group(1))
+            except ValueError:
+                raise JournalParseError(
+                    f"line {line_number}: invalid recurring next date "
+                    f"'{next_match.group(1)}'"
+                ) from None
+            next_date_seen = True
+            continue
+
+        current.postings.append(_parse_posting(line, line_number, accounts_by_name))
+
+    if current is not None:
+        _validate_recurring(current, current_line, year)
+        recurring_transactions.append(current)
+
+    return recurring_transactions
+
+
+def _parse_posting(
+    line: str, line_number: int, accounts_by_name: dict[str, Account]
+) -> Posting:
+    """Parse a posting shared by ordinary and recurring transactions."""
+    match = POSTING_PATTERN.fullmatch(line)
+    if not match:
+        raise JournalParseError(f"line {line_number}: expected '  ACCOUNT AMOUNT'")
+
+    account_name, amount_text = match.groups()
+    account = accounts_by_name.get(account_name)
+    if account is None:
+        raise JournalParseError(f"line {line_number}: unknown account '{account_name}'")
+
+    try:
+        amount = Decimal(amount_text)
+    except InvalidOperation:
+        raise JournalParseError(
+            f"line {line_number}: invalid amount '{amount_text}'"
+        ) from None
+
+    return Posting(account=account, amount=amount)
+
+
+def _validate_recurring(
+    recurring: RecurringTransaction, line_number: int, year: int
+) -> None:
+    if recurring.start_date.year != year:
+        raise JournalParseError(
+            f"line {line_number}: recurring start date is outside journal year {year}"
+        )
+    if recurring.next_date < recurring.start_date:
+        raise JournalParseError(
+            f"line {line_number}: recurring next date precedes its start date"
+        )
+    if not recurring.description.strip():
+        raise JournalParseError(
+            f"line {line_number}: recurring description cannot be empty"
+        )
+    _validate_postings(recurring.postings, line_number)
 
 
 def _validate_transaction(
@@ -246,12 +350,25 @@ def _validate_transaction(
             f"line {line_number}: transaction date is outside journal year {year}"
         )
 
-    if len(transaction.postings) < 2:
+    _validate_postings(transaction.postings, line_number)
+
+
+def _validate_postings(postings: list[Posting], line_number: int) -> None:
+    if len(postings) < 2:
         raise JournalParseError(
             f"line {line_number}: transaction must have at least two postings"
         )
 
-    balance = sum((posting.amount for posting in transaction.postings), Decimal(0))
+    posting_accounts = [posting.account for posting in postings]
+    if len(set(posting_accounts)) != len(posting_accounts):
+        raise JournalParseError(
+            f"line {line_number}: an account cannot appear more than once"
+        )
+
+    if any(posting.amount == 0 for posting in postings):
+        raise JournalParseError(f"line {line_number}: posting amounts cannot be zero")
+
+    balance = sum((posting.amount for posting in postings), Decimal(0))
     if balance != 0:
         raise JournalParseError(
             f"line {line_number}: transaction is not balanced (difference: {balance})"

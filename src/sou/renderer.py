@@ -15,6 +15,19 @@ def render_sou(journal: Journal) -> str:
     ]
 
     lines.extend(render_accounts(journal.accounts))
+
+    if journal.recurring_transactions:
+        lines.extend(["", "[RECURRING]"])
+        for recurring in journal.recurring_transactions:
+            lines.append("")
+            lines.append(
+                f"{recurring.frequency} {recurring.start_date.isoformat()} "
+                f"{recurring.description}"
+            )
+            lines.append(f"  next: {recurring.next_date.isoformat()}")
+            for posting in recurring.postings:
+                lines.append(f"  {posting.account}  {_render_amount(posting.amount)}")
+
     lines.extend(["", "[TRANSACTIONS]"])
 
     for transaction in journal.transactions:
