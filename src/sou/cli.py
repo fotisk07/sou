@@ -1,3 +1,4 @@
+import calendar
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -56,6 +57,10 @@ CATEGORY_PREFIXES = {
 
 def _today() -> date:
     return datetime.now().astimezone().date()
+
+
+def _month_end(day: date) -> date:
+    return date(day.year, day.month, calendar.monthrange(day.year, day.month)[1])
 
 
 def _parse_date(journal: Journal, date_text: str | None, label: str) -> date:
@@ -426,7 +431,13 @@ def list_recurring(journal_path: Path):
 @click.option(
     "--through",
     "through_text",
-    help="Post occurrences through MM-DD. Defaults to today.",
+    help="Post occurrences through MM-DD. Defaults to the end of this month.",
+)
+@click.option(
+    "--today",
+    "through_today",
+    is_flag=True,
+    help="Post only occurrences due through today.",
 )
 @click.option("--dry-run", is_flag=True, help="Show due transactions without saving.")
 @click.option(
@@ -437,11 +448,24 @@ def list_recurring(journal_path: Path):
     default=Path("journal.sou"),
     show_default=True,
 )
-def post_recurring(through_text: str | None, dry_run: bool, journal_path: Path):
-    """Post all due recurring transactions."""
+def post_recurring(
+    through_text: str | None,
+    through_today: bool,
+    dry_run: bool,
+    journal_path: Path,
+):
+    """Post recurring transactions through the end of the current month."""
+    if through_text and through_today:
+        raise click.ClickException("--today and --through cannot be used together")
+
     try:
         journal = load_journal(journal_path)
-        through_date = _parse_date(journal, through_text, "date")
+        if through_text:
+            through_date = _parse_date(journal, through_text, "date")
+        elif through_today:
+            through_date = _today()
+        else:
+            through_date = _month_end(_today())
         transactions = post_due_transactions(journal, through_date)
         if not dry_run:
             save_journal(journal_path, journal)

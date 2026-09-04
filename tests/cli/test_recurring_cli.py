@@ -198,6 +198,89 @@ def test_post_rec_dry_run_does_not_change_journal(runner, accounts_journal_path)
     assert journal.recurring_transactions[0].next_date == date(2025, 7, 1)
 
 
+def test_post_rec_defaults_to_end_of_current_month(
+    runner, accounts_journal_path, monkeypatch
+):
+    monkeypatch.setattr(cli, "_today", lambda: date(2025, 7, 1))
+    add_result = runner.invoke(
+        cli.cli,
+        [
+            "recur",
+            "add",
+            "Future monthly food",
+            "a:Bank",
+            "-10",
+            "e:Food",
+            "10",
+            "--start",
+            "07-20",
+            "-j",
+            str(accounts_journal_path),
+        ],
+    )
+    assert add_result.exit_code == 0
+
+    result = runner.invoke(
+        cli.cli,
+        ["post-rec", "-j", str(accounts_journal_path)],
+    )
+
+    assert result.exit_code == 0
+    assert "Posted 1 recurring transaction" in result.output
+    assert load_journal(accounts_journal_path).transactions[0].date == date(2025, 7, 20)
+
+
+def test_post_rec_today_excludes_future_occurrences(
+    runner, accounts_journal_path, monkeypatch
+):
+    monkeypatch.setattr(cli, "_today", lambda: date(2025, 7, 1))
+    add_result = runner.invoke(
+        cli.cli,
+        [
+            "recur",
+            "add",
+            "Future monthly food",
+            "a:Bank",
+            "-10",
+            "e:Food",
+            "10",
+            "--start",
+            "07-20",
+            "-j",
+            str(accounts_journal_path),
+        ],
+    )
+    assert add_result.exit_code == 0
+
+    result = runner.invoke(
+        cli.cli,
+        ["post-rec", "--today", "-j", str(accounts_journal_path)],
+    )
+
+    assert result.exit_code == 0
+    assert "No recurring transactions due" in result.output
+    journal = load_journal(accounts_journal_path)
+    assert journal.transactions == []
+    assert journal.recurring_transactions[0].next_date == date(2025, 7, 20)
+
+
+def test_post_rec_rejects_today_with_through(runner, accounts_journal_path):
+    result = runner.invoke(
+        cli.cli,
+        [
+            "post-rec",
+            "--today",
+            "--through",
+            "07-31",
+            "-j",
+            str(accounts_journal_path),
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "cannot be used together" in result.output
+
+
 def test_recur_list_displays_templates(runner, accounts_journal_path):
     runner.invoke(
         cli.cli,

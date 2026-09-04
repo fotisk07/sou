@@ -168,18 +168,20 @@ frequency. List the configured templates with:
 sou recur list
 ```
 
-Post every occurrence due through today:
+Post every occurrence through the end of the current month, including future
+transactions used for planning:
 
 ```bash
 sou post-rec
 ```
 
 The command catches up missed occurrences and advances each template, so it is
-safe to run repeatedly. Preview without changing the journal, or choose an
-explicit cutoff:
+safe to run repeatedly. Preview without changing the journal, limit posting to
+occurrences due today, or choose an explicit cutoff:
 
 ```bash
 sou post-rec --dry-run
+sou post-rec --today
 sou post-rec --through 08-31
 ```
 
