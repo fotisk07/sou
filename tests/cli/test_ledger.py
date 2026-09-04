@@ -3,12 +3,6 @@ from datetime import date
 from sou import cli
 
 
-class July2025(date):
-    @classmethod
-    def today(cls):
-        return cls(2025, 7, 15)
-
-
 def table_rows(output):
     return [
         [cell.strip() for cell in line.split("|")[1:-1]]
@@ -46,7 +40,7 @@ def test_ledger_renders_table_and_maps_date_options(runner, report_journal_path)
 def test_ledger_defaults_to_current_calendar_month(
     runner, report_journal_path, monkeypatch
 ):
-    monkeypatch.setattr(cli, "date", July2025)
+    monkeypatch.setattr(cli, "_today", lambda: date(2025, 7, 15))
 
     result = runner.invoke(
         cli.cli,

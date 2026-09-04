@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
@@ -61,7 +61,7 @@ def test_post_defaults_to_today(runner, current_accounts_journal_path):
 
     assert result.exit_code == 0
     transaction = load_journal(current_accounts_journal_path).transactions[0]
-    assert transaction.date == date.today()
+    assert transaction.date == datetime.now().astimezone().date()
 
 
 @pytest.mark.parametrize("amount", ["0", "NaN", "not-a-number"])

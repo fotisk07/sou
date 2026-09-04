@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
@@ -42,6 +42,10 @@ CATEGORY_PREFIXES = {
 }
 
 
+def _today() -> date:
+    return datetime.now().astimezone().date()
+
+
 def complete_account(
     ctx: click.Context,
     param: click.Parameter,
@@ -76,7 +80,7 @@ def cli():
     "-y",
     "--year",
     type=int,
-    default=lambda: date.today().year,
+    default=lambda: _today().year,
     show_default="current year",
 )
 def init(path: Path, year: int):
@@ -214,7 +218,7 @@ def post(
                     f"invalid date '{date_text}'; expected MM-DD"
                 ) from None
         else:
-            transaction_date = date.today()
+            transaction_date = _today()
 
         source_account = resolve_account(journal, source)
         target_account = resolve_account(journal, target)
@@ -277,7 +281,7 @@ def split(
                     f"invalid date '{date_text}'; expected MM-DD"
                 ) from None
         else:
-            transaction_date = date.today()
+            transaction_date = _today()
 
         postings = []
         for account_reference, amount_text in zip(
@@ -337,7 +341,7 @@ def balance(
             month,
             quarter,
             all_time,
-            date.today(),
+            _today(),
         )
 
         account = resolve_account(journal, account_reference)
@@ -383,7 +387,7 @@ def ledger(
             month,
             quarter,
             all_time,
-            date.today(),
+            _today(),
         )
 
         account = resolve_account(journal, account_reference)
@@ -433,7 +437,7 @@ def pnl(
             month,
             quarter,
             all_time,
-            date.today(),
+            _today(),
         )
         report = profit_and_loss(journal, from_date, to_date)
     except FileNotFoundError:
@@ -477,7 +481,7 @@ def bs(
             at_text,
             month,
             quarter,
-            date.today(),
+            _today(),
         )
         report = balance_sheet(journal, at_date)
     except FileNotFoundError:

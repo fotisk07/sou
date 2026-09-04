@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 
 from sou import cli
 from sou.storage import load_journal
@@ -10,7 +10,7 @@ def test_init_uses_current_year_by_default(runner, tmp_path):
     result = runner.invoke(cli.cli, ["init", str(journal_path)])
 
     assert result.exit_code == 0
-    assert load_journal(journal_path).year == date.today().year
+    assert load_journal(journal_path).year == datetime.now().astimezone().year
 
 
 def test_init_accepts_year_option(runner, tmp_path):

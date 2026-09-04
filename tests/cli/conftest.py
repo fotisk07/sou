@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
@@ -57,7 +57,7 @@ def current_accounts_journal_path(tmp_path):
     save_journal(
         path,
         Journal(
-            year=date.today().year,
+            year=datetime.now().astimezone().year,
             accounts={BANK, FOOD, SALARY},
             transactions=[],
         ),

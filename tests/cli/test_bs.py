@@ -3,12 +3,6 @@ from datetime import date
 from sou import cli
 
 
-class July2025(date):
-    @classmethod
-    def today(cls):
-        return cls(2025, 7, 15)
-
-
 def table_rows(output):
     return [
         [cell.strip() for cell in line.split("|")[1:-1]]
@@ -18,7 +12,7 @@ def table_rows(output):
 
 
 def test_bs_defaults_to_end_of_current_month(runner, report_journal_path, monkeypatch):
-    monkeypatch.setattr(cli, "date", July2025)
+    monkeypatch.setattr(cli, "_today", lambda: date(2025, 7, 15))
 
     result = runner.invoke(
         cli.cli,
