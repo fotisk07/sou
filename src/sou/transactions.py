@@ -7,8 +7,8 @@ class TransactionError(ValueError):
     """Raised when a transaction cannot be added to a journal."""
 
 
-def add_transaction(journal: Journal, transaction: Transaction) -> None:
-    """Validate and append a transaction to a journal."""
+def validate_transaction(journal: Journal, transaction: Transaction) -> None:
+    """Validate a transaction without adding it to a journal."""
     if transaction.date.year != journal.year:
         raise TransactionError(
             f"transaction date is outside journal year {journal.year}"
@@ -36,4 +36,8 @@ def add_transaction(journal: Journal, transaction: Transaction) -> None:
     if balance != 0:
         raise TransactionError(f"transaction is not balanced (difference: {balance})")
 
+
+def add_transaction(journal: Journal, transaction: Transaction) -> None:
+    """Validate and append a transaction to a journal."""
+    validate_transaction(journal, transaction)
     journal.transactions.append(transaction)
