@@ -37,8 +37,8 @@ def test_save_and_load_journal_round_trip(tmp_path):
                 date=date(2025, 7, 1),
                 description="Lunch",
                 postings=[
-                    Posting(account=bank, amount=Decimal("-10")),
-                    Posting(account=food, amount=Decimal("10")),
+                    Posting(account=bank, amount=Decimal(-10)),
+                    Posting(account=food, amount=Decimal(10)),
                 ],
             )
         ],

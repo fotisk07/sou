@@ -6,7 +6,6 @@ import pytest
 from sou.models import Account, Journal, Posting, Transaction
 from sou.transactions import TransactionError, add_transaction
 
-
 BANK = Account(category="Assets", path=("Bank",))
 FOOD = Account(category="Expenses", path=("Food",))
 UNKNOWN = Account(category="Expenses", path=("Unknown",))
@@ -29,8 +28,8 @@ def transaction(
             postings
             if postings is not None
             else [
-                Posting(account=BANK, amount=Decimal("-10")),
-                Posting(account=FOOD, amount=Decimal("10")),
+                Posting(account=BANK, amount=Decimal(-10)),
+                Posting(account=FOOD, amount=Decimal(10)),
             ]
         ),
     )
@@ -51,14 +50,14 @@ def test_add_transaction_appends_valid_transaction():
         (transaction(transaction_date=date(2024, 12, 31)), "outside journal year"),
         (transaction(description=" "), "description cannot be empty"),
         (
-            transaction(postings=[Posting(account=BANK, amount=Decimal("10"))]),
+            transaction(postings=[Posting(account=BANK, amount=Decimal(10))]),
             "at least two postings",
         ),
         (
             transaction(
                 postings=[
-                    Posting(account=BANK, amount=Decimal("-10")),
-                    Posting(account=BANK, amount=Decimal("10")),
+                    Posting(account=BANK, amount=Decimal(-10)),
+                    Posting(account=BANK, amount=Decimal(10)),
                 ]
             ),
             "cannot appear more than once",
@@ -66,8 +65,8 @@ def test_add_transaction_appends_valid_transaction():
         (
             transaction(
                 postings=[
-                    Posting(account=BANK, amount=Decimal("-10")),
-                    Posting(account=UNKNOWN, amount=Decimal("10")),
+                    Posting(account=BANK, amount=Decimal(-10)),
+                    Posting(account=UNKNOWN, amount=Decimal(10)),
                 ]
             ),
             "unknown account",
@@ -76,7 +75,7 @@ def test_add_transaction_appends_valid_transaction():
             transaction(
                 postings=[
                     Posting(account=BANK, amount=Decimal("NaN")),
-                    Posting(account=FOOD, amount=Decimal("10")),
+                    Posting(account=FOOD, amount=Decimal(10)),
                 ]
             ),
             "must be finite",
@@ -84,8 +83,8 @@ def test_add_transaction_appends_valid_transaction():
         (
             transaction(
                 postings=[
-                    Posting(account=BANK, amount=Decimal("0")),
-                    Posting(account=FOOD, amount=Decimal("0")),
+                    Posting(account=BANK, amount=Decimal(0)),
+                    Posting(account=FOOD, amount=Decimal(0)),
                 ]
             ),
             "cannot be zero",
@@ -93,8 +92,8 @@ def test_add_transaction_appends_valid_transaction():
         (
             transaction(
                 postings=[
-                    Posting(account=BANK, amount=Decimal("-10")),
-                    Posting(account=FOOD, amount=Decimal("9")),
+                    Posting(account=BANK, amount=Decimal(-10)),
+                    Posting(account=FOOD, amount=Decimal(9)),
                 ]
             ),
             "not balanced",

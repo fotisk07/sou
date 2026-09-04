@@ -7,7 +7,6 @@ from sou import cli
 from sou.models import Account, Posting, Transaction
 from sou.storage import load_journal
 
-
 BANK = Account(category="Assets", path=("Bank",))
 FOOD = Account(category="Expenses", path=("Food",))
 SALARY = Account(category="Income", path=("Salary",))
@@ -38,9 +37,9 @@ def test_split_posts_multiple_signed_amounts(runner, accounts_journal_path):
             date=date(2025, 7, 31),
             description="Payday shopping",
             postings=[
-                Posting(account=SALARY, amount=Decimal("-100")),
-                Posting(account=BANK, amount=Decimal("70")),
-                Posting(account=FOOD, amount=Decimal("30")),
+                Posting(account=SALARY, amount=Decimal(-100)),
+                Posting(account=BANK, amount=Decimal(70)),
+                Posting(account=FOOD, amount=Decimal(30)),
             ],
         )
     ]

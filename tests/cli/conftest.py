@@ -7,7 +7,6 @@ from click.testing import CliRunner
 from sou.models import Account, Journal, Posting, Transaction
 from sou.storage import init_journal, save_journal
 
-
 BANK = Account(category="Assets", path=("Bank",))
 OPENING_BALANCES = Account(category="Equity", path=("OpeningBalances",))
 FOOD = Account(category="Expenses", path=("Food",))

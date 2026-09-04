@@ -62,6 +62,20 @@ def test_ledger_defaults_to_current_calendar_month(
     ]
 
 
+def test_ledger_accepts_a_quarter_number(runner, report_journal_path):
+    result = runner.invoke(
+        cli.cli,
+        ["ledger", "i:Salary", "-q", "3", "-j", str(report_journal_path)],
+    )
+
+    assert result.exit_code == 0
+    assert table_rows(result.output)[1:] == [
+        ["", "", "Opening balance", "", "-0"],
+        ["08-01", "Income::Salary", "Salary", "100.00", "100.00"],
+        ["", "", "Closing balance", "", "100.00"],
+    ]
+
+
 def test_ledger_renders_natural_income_sign(runner, report_journal_path):
     result = runner.invoke(
         cli.cli,

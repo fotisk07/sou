@@ -32,7 +32,7 @@ def add_transaction(journal: Journal, transaction: Transaction) -> None:
         if posting.amount == 0:
             raise TransactionError("posting amounts cannot be zero")
 
-    balance = sum((posting.amount for posting in transaction.postings), Decimal("0"))
+    balance = sum((posting.amount for posting in transaction.postings), Decimal(0))
     if balance != 0:
         raise TransactionError(f"transaction is not balanced (difference: {balance})")
 

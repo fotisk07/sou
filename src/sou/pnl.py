@@ -30,7 +30,7 @@ def profit_and_loss(
         for account in journal.accounts
         if account.category in {"Income", "Expenses"}
     }
-    direct_activity = {account: Decimal("0") for account in report_accounts}
+    direct_activity = {account: Decimal(0) for account in report_accounts}
 
     for transaction in journal.transactions:
         if not start <= transaction.date <= end:
@@ -60,7 +60,7 @@ def profit_and_loss(
                         for candidate, amount in direct_activity.items()
                         if account_contains(account, candidate)
                     ),
-                    start=Decimal("0"),
+                    start=Decimal(0),
                 ),
             )
             for account in accounts
@@ -70,11 +70,11 @@ def profit_and_loss(
     expense_lines = lines_for("Expenses")
     total_income = sum(
         (line.direct for line in income_lines),
-        start=Decimal("0"),
+        start=Decimal(0),
     )
     total_expenses = sum(
         (line.direct for line in expense_lines),
-        start=Decimal("0"),
+        start=Decimal(0),
     )
 
     return ProfitAndLoss(

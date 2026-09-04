@@ -153,7 +153,7 @@ the current month:
 
 ```bash
 sou balance e:Food
-sou balance e:Food --quarter
+sou balance e:Food --quarter 3
 sou balance e:Food --all
 sou balance a:Bank:Checking --from 07-01 --to 07-31
 ```
@@ -164,7 +164,7 @@ Period balances show the opening balance, activity, and closing balance.
 
 ```bash
 sou ledger e:Food
-sou ledger e:Food --quarter
+sou ledger e:Food --quarter 3
 sou ledger e:Food --all
 sou ledger a:Bank:Checking --from 07-01 --to 07-31
 ```
@@ -174,8 +174,9 @@ The ledger displays matching postings and a running balance.
 ### View profit and loss
 
 ```bash
-sou pnl
-sou pnl --quarter
+sou pnl                  # current month
+sou pnl -m 7             # July
+sou pnl --quarter 3      # July through September
 sou pnl --all
 sou pnl --from 07-01 --to 09-30
 sou pnl --depth 2
@@ -187,7 +188,9 @@ The default depth shows top-level accounts with activity from all descendants.
 ### View the balance sheet
 
 ```bash
-sou bs
+sou bs                   # end of the current month
+sou bs -m 8              # end of August
+sou bs --quarter 3       # end of September
 sou bs --at 08-31
 sou bs --depth 2
 ```

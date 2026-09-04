@@ -22,8 +22,8 @@ def balance_sheet(journal: Journal, at_date: date | None = None) -> BalanceSheet
         for account in journal.accounts
         if account.category in {"Assets", "Liabilities", "Equity"}
     }
-    direct_balances = {account: Decimal("0") for account in report_accounts}
-    current_year_result = Decimal("0")
+    direct_balances = {account: Decimal(0) for account in report_accounts}
+    current_year_result = Decimal(0)
 
     for transaction in journal.transactions:
         if transaction.date > report_date:
@@ -52,7 +52,7 @@ def balance_sheet(journal: Journal, at_date: date | None = None) -> BalanceSheet
                         for candidate, amount in direct_balances.items()
                         if account_contains(account, candidate)
                     ),
-                    start=Decimal("0"),
+                    start=Decimal(0),
                 ),
             )
             for account in accounts
@@ -63,15 +63,15 @@ def balance_sheet(journal: Journal, at_date: date | None = None) -> BalanceSheet
     equity_lines = lines_for("Equity")
     total_assets = sum(
         (line.direct for line in asset_lines),
-        start=Decimal("0"),
+        start=Decimal(0),
     )
     total_liabilities = sum(
         (line.direct for line in liability_lines),
-        start=Decimal("0"),
+        start=Decimal(0),
     )
     equity_account_total = sum(
         (line.direct for line in equity_lines),
-        start=Decimal("0"),
+        start=Decimal(0),
     )
     total_net_worth = equity_account_total + current_year_result
     total_liabilities_and_net_worth = total_liabilities + total_net_worth

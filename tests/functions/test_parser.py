@@ -6,7 +6,6 @@ import pytest
 from sou.models import Account, Posting, Transaction
 from sou.parser import JournalParseError, parse_sou
 
-
 EXAMPLE_SOU = """[JOURNAL]
 
 year: 2025
@@ -57,11 +56,11 @@ def test_parse_transactions():
             postings=[
                 Posting(
                     account=Account(category="Assets", path=("Checkings",)),
-                    amount=Decimal("-100"),
+                    amount=Decimal(-100),
                 ),
                 Posting(
                     account=Account(category="Expenses", path=("Test",)),
-                    amount=Decimal("100"),
+                    amount=Decimal(100),
                 ),
             ],
         )
@@ -81,15 +80,15 @@ def test_multiple_postings():
             postings=[
                 Posting(
                     account=Account(category="Assets", path=("Checkings",)),
-                    amount=Decimal("-100"),
+                    amount=Decimal(-100),
                 ),
                 Posting(
                     account=Account(category="Expenses", path=("Test",)),
-                    amount=Decimal("50"),
+                    amount=Decimal(50),
                 ),
                 Posting(
                     account=Account(category="Liabilities", path=("Test", "Tit")),
-                    amount=Decimal("50"),
+                    amount=Decimal(50),
                 ),
             ],
         )
@@ -110,11 +109,11 @@ def test_multiple_transactions():
         postings=[
             Posting(
                 account=Account(category="Assets", path=("Checkings",)),
-                amount=Decimal("50"),
+                amount=Decimal(50),
             ),
             Posting(
                 account=Account(category="Equity", path=("Hey",)),
-                amount=Decimal("-50"),
+                amount=Decimal(-50),
             ),
         ],
     )

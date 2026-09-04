@@ -56,6 +56,18 @@ def test_balance_defaults_to_current_calendar_month(
     )
 
 
+def test_balance_accepts_a_month_number(runner, report_journal_path):
+    result = runner.invoke(
+        cli.cli,
+        ["balance", "e:Food", "-m", "6", "-j", str(report_journal_path)],
+    )
+
+    assert result.exit_code == 0
+    assert result.output == (
+        "Expenses::Food\nOpening:  0\nActivity:  10.00\nClosing:  10.00\n"
+    )
+
+
 def test_balance_renders_natural_income_sign(runner, report_journal_path):
     result = runner.invoke(
         cli.cli,
@@ -66,10 +78,7 @@ def test_balance_renders_natural_income_sign(runner, report_journal_path):
     assert result.output == "Income::Salary  100.00\n"
 
 
-def test_balance_rejects_month_with_explicit_range(
-    runner, report_journal_path, monkeypatch
-):
-    monkeypatch.setattr(cli, "date", July2025)
+def test_balance_rejects_month_with_explicit_range(runner, report_journal_path):
 
     result = runner.invoke(
         cli.cli,
@@ -77,6 +86,7 @@ def test_balance_rejects_month_with_explicit_range(
             "balance",
             "e:Food",
             "--month",
+            "7",
             "--from",
             "07-01",
             "-j",
@@ -85,7 +95,9 @@ def test_balance_rejects_month_with_explicit_range(
     )
 
     assert result.exit_code == 2
-    assert "--month cannot be combined with --from or --to" in result.output
+    assert "--month, --quarter, --all, and --from/--to are mutually exclusive" in (
+        result.output
+    )
 
 
 def test_balance_rejects_invalid_date(runner, report_journal_path):

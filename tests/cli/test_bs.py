@@ -17,7 +17,7 @@ def table_rows(output):
     ]
 
 
-def test_bs_defaults_to_today(runner, report_journal_path, monkeypatch):
+def test_bs_defaults_to_end_of_current_month(runner, report_journal_path, monkeypatch):
     monkeypatch.setattr(cli, "date", July2025)
 
     result = runner.invoke(
@@ -26,20 +26,40 @@ def test_bs_defaults_to_today(runner, report_journal_path, monkeypatch):
     )
 
     assert result.exit_code == 0
-    assert result.output.startswith("Balance Sheet — 2025-07-15\n")
+    assert result.output.startswith("Balance Sheet — 2025-07-31\n")
     assert table_rows(result.output) == [
         ["Account", "Amount"],
         ["ASSETS", ""],
-        ["Bank", "985.00"],
-        ["TOTAL ASSETS", "985.00"],
+        ["Bank", "965.00"],
+        ["TOTAL ASSETS", "965.00"],
         ["LIABILITIES", ""],
         ["TOTAL LIABILITIES", "0.00"],
         ["NET WORTH", ""],
         ["OpeningBalances", "1,000.00"],
-        ["Current year result", "-15.00"],
-        ["TOTAL NET WORTH", "985.00"],
-        ["TOTAL LIABILITIES AND NET WORTH", "985.00"],
+        ["Current year result", "-35.00"],
+        ["TOTAL NET WORTH", "965.00"],
+        ["TOTAL LIABILITIES AND NET WORTH", "965.00"],
     ]
+
+
+def test_bs_accepts_a_month_number(runner, report_journal_path):
+    result = runner.invoke(
+        cli.cli,
+        ["bs", "-m", "6", "-j", str(report_journal_path)],
+    )
+
+    assert result.exit_code == 0
+    assert result.output.startswith("Balance Sheet — 2025-06-30\n")
+
+
+def test_bs_accepts_a_quarter_number(runner, report_journal_path):
+    result = runner.invoke(
+        cli.cli,
+        ["bs", "-q", "3", "-j", str(report_journal_path)],
+    )
+
+    assert result.exit_code == 0
+    assert result.output.startswith("Balance Sheet — 2025-09-30\n")
 
 
 def test_bs_accepts_an_explicit_date_and_depth(runner, report_journal_path):

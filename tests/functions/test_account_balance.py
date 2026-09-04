@@ -6,7 +6,6 @@ import pytest
 from sou.accounts import AccountError, account_balance
 from sou.models import Account, AccountBalance, Journal, Posting, Transaction
 
-
 BANK = Account(category="Assets", path=("Bank",))
 GROCERIES = Account(category="Expenses", path=("Groceries",))
 COFFEE = Account(category="Expenses", path=("Groceries", "Coffee"))
@@ -49,9 +48,9 @@ def test_balance_for_leaf_account_only_includes_that_account():
     balance = account_balance(journal, COFFEE)
 
     assert balance == AccountBalance(
-        opening=Decimal("0"),
-        activity=Decimal("25"),
-        closing=Decimal("25"),
+        opening=Decimal(0),
+        activity=Decimal(25),
+        closing=Decimal(25),
     )
 
 
@@ -60,8 +59,8 @@ def test_balance_for_parent_includes_direct_postings_and_descendants():
         date=date(2025, 10, 4),
         description="Unrelated account with the same path",
         postings=[
-            Posting(account=INCOME_GROCERIES, amount=Decimal("-500")),
-            Posting(account=BANK, amount=Decimal("500")),
+            Posting(account=INCOME_GROCERIES, amount=Decimal(-500)),
+            Posting(account=BANK, amount=Decimal(500)),
         ],
     )
     journal = journal_with(
@@ -73,7 +72,7 @@ def test_balance_for_parent_includes_direct_postings_and_descendants():
 
     balance = account_balance(journal, GROCERIES)
 
-    assert balance.closing == Decimal("155")
+    assert balance.closing == Decimal(155)
 
 
 def test_balance_range_has_opening_activity_and_closing():
@@ -92,9 +91,9 @@ def test_balance_range_has_opening_activity_and_closing():
     )
 
     assert balance == AccountBalance(
-        opening=Decimal("10"),
-        activity=Decimal("50"),
-        closing=Decimal("60"),
+        opening=Decimal(10),
+        activity=Decimal(50),
+        closing=Decimal(60),
     )
 
 
@@ -113,9 +112,9 @@ def test_balance_supports_only_from_date():
     )
 
     assert balance == AccountBalance(
-        opening=Decimal("30"),
-        activity=Decimal("70"),
-        closing=Decimal("100"),
+        opening=Decimal(30),
+        activity=Decimal(70),
+        closing=Decimal(100),
     )
 
 
@@ -133,9 +132,9 @@ def test_balance_supports_only_to_date():
     )
 
     assert balance == AccountBalance(
-        opening=Decimal("0"),
-        activity=Decimal("30"),
-        closing=Decimal("30"),
+        opening=Decimal(0),
+        activity=Decimal(30),
+        closing=Decimal(30),
     )
 
 
@@ -143,9 +142,9 @@ def test_balance_without_postings_returns_decimal_zeros():
     balance = account_balance(journal_with(), UNUSED)
 
     assert balance == AccountBalance(
-        opening=Decimal("0"),
-        activity=Decimal("0"),
-        closing=Decimal("0"),
+        opening=Decimal(0),
+        activity=Decimal(0),
+        closing=Decimal(0),
     )
 
 

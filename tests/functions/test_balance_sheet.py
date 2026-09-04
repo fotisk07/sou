@@ -63,26 +63,26 @@ def test_balance_sheet_rolls_up_accounts_and_current_year_result():
     report = balance_sheet(journal_with_activity(), date(2025, 3, 31))
     lines = {line.account: line for line in report.asset_lines}
 
-    assert lines[BANK].direct == Decimal("100")
-    assert lines[BANK].total == Decimal("1500")
-    assert lines[CHECKING].total == Decimal("1400")
-    assert report.total_assets == Decimal("1500")
-    assert report.total_liabilities == Decimal("0")
-    assert report.equity_account_total == Decimal("1100")
-    assert report.current_year_result == Decimal("400")
-    assert report.total_net_worth == Decimal("1500")
-    assert report.total_liabilities_and_net_worth == Decimal("1500")
-    assert report.difference == Decimal("0")
+    assert lines[BANK].direct == Decimal(100)
+    assert lines[BANK].total == Decimal(1500)
+    assert lines[CHECKING].total == Decimal(1400)
+    assert report.total_assets == Decimal(1500)
+    assert report.total_liabilities == Decimal(0)
+    assert report.equity_account_total == Decimal(1100)
+    assert report.current_year_result == Decimal(400)
+    assert report.total_net_worth == Decimal(1500)
+    assert report.total_liabilities_and_net_worth == Decimal(1500)
+    assert report.difference == Decimal(0)
 
 
 def test_balance_sheet_displays_liabilities_with_their_natural_sign():
     report = balance_sheet(journal_with_activity(), date(2025, 4, 30))
 
-    assert report.liability_lines[0].total == Decimal("200")
-    assert report.current_year_result == Decimal("200")
-    assert report.total_net_worth == Decimal("1300")
-    assert report.total_liabilities_and_net_worth == Decimal("1500")
-    assert report.difference == Decimal("0")
+    assert report.liability_lines[0].total == Decimal(200)
+    assert report.current_year_result == Decimal(200)
+    assert report.total_net_worth == Decimal(1300)
+    assert report.total_liabilities_and_net_worth == Decimal(1500)
+    assert report.difference == Decimal(0)
 
 
 def test_balance_sheet_rejects_a_date_outside_the_journal_year():

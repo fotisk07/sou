@@ -107,8 +107,8 @@ def account_balance(
     if start > end:
         raise AccountError("from date cannot be after to date")
 
-    opening = Decimal("0")
-    activity = Decimal("0")
+    opening = Decimal(0)
+    activity = Decimal(0)
 
     for transaction in journal.transactions:
         for posting in transaction.postings:

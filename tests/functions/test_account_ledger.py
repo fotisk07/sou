@@ -11,7 +11,6 @@ from sou.models import (
     Transaction,
 )
 
-
 BANK = Account(category="Assets", path=("Bank",))
 CHECKING = Account(category="Assets", path=("Bank", "Checking"))
 SAVINGS = Account(category="Assets", path=("Bank", "Savings"))
@@ -53,24 +52,24 @@ def test_account_ledger_includes_descendants_and_orders_entries_by_date():
     )
 
     assert ledger == AccountLedger(
-        opening=Decimal("5"),
+        opening=Decimal(5),
         entries=[
             LedgerEntry(
                 date=date(2025, 10, 1),
                 description="Groceries",
                 account=FOOD,
-                amount=Decimal("20"),
-                balance=Decimal("25"),
+                amount=Decimal(20),
+                balance=Decimal(25),
             ),
             LedgerEntry(
                 date=date(2025, 10, 2),
                 description="Coffee",
                 account=COFFEE,
-                amount=Decimal("10"),
-                balance=Decimal("35"),
+                amount=Decimal(10),
+                balance=Decimal(35),
             ),
         ],
-        closing=Decimal("35"),
+        closing=Decimal(35),
     )
 
 
@@ -84,7 +83,7 @@ def test_account_ledger_for_child_excludes_parent_postings():
 
     assert len(ledger.entries) == 1
     assert ledger.entries[0].account == COFFEE
-    assert ledger.closing == Decimal("10")
+    assert ledger.closing == Decimal(10)
 
 
 def test_account_ledger_keeps_each_matching_posting_in_a_split_transaction():
@@ -92,8 +91,8 @@ def test_account_ledger_keeps_each_matching_posting_in_a_split_transaction():
         date=date(2025, 10, 3),
         description="Transfer to savings",
         postings=[
-            Posting(account=CHECKING, amount=Decimal("-100")),
-            Posting(account=SAVINGS, amount=Decimal("100")),
+            Posting(account=CHECKING, amount=Decimal(-100)),
+            Posting(account=SAVINGS, amount=Decimal(100)),
         ],
     )
 
@@ -102,7 +101,7 @@ def test_account_ledger_keeps_each_matching_posting_in_a_split_transaction():
     assert [
         (entry.account, entry.amount, entry.balance) for entry in ledger.entries
     ] == [
-        (CHECKING, Decimal("-100"), Decimal("-100")),
-        (SAVINGS, Decimal("100"), Decimal("0")),
+        (CHECKING, Decimal(-100), Decimal(-100)),
+        (SAVINGS, Decimal(100), Decimal(0)),
     ]
-    assert ledger.closing == Decimal("0")
+    assert ledger.closing == Decimal(0)

@@ -1,10 +1,9 @@
 from datetime import date
 from decimal import Decimal
 
-from sou.renderer import render_sou
 from sou.models import Account, Journal, Posting, Transaction
 from sou.parser import parse_sou
-
+from sou.renderer import render_sou
 
 EXAMPLE_SOU = """[JOURNAL]
 
@@ -42,11 +41,11 @@ def test_render_sou():
                 postings=[
                     Posting(
                         account=Account(category="Assets", path=("Checkings",)),
-                        amount=Decimal("-100"),
+                        amount=Decimal(-100),
                     ),
                     Posting(
                         account=Account(category="Expenses", path=("Test",)),
-                        amount=Decimal("100"),
+                        amount=Decimal(100),
                     ),
                 ],
             ),
@@ -72,11 +71,11 @@ def test_round_trip():
                 postings=[
                     Posting(
                         account=Account(category="Assets", path=("Checkings",)),
-                        amount=Decimal("-100"),
+                        amount=Decimal(-100),
                     ),
                     Posting(
                         account=Account(category="Expenses", path=("Test",)),
-                        amount=Decimal("100"),
+                        amount=Decimal(100),
                     ),
                 ],
             ),

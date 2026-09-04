@@ -10,7 +10,6 @@ from sou.models import (
     Transaction,
 )
 
-
 SECTIONS = ("JOURNAL", "ACCOUNTS", "TRANSACTIONS")
 YEAR_PATTERN = re.compile(r"year:\s*(\d{4})")
 SECTION_PATTERN = re.compile(r"\[(.+)]")
@@ -252,7 +251,7 @@ def _validate_transaction(
             f"line {line_number}: transaction must have at least two postings"
         )
 
-    balance = sum((posting.amount for posting in transaction.postings), Decimal("0"))
+    balance = sum((posting.amount for posting in transaction.postings), Decimal(0))
     if balance != 0:
         raise JournalParseError(
             f"line {line_number}: transaction is not balanced (difference: {balance})"

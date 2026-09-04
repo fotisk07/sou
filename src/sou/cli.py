@@ -16,7 +16,8 @@ from sou.accounts import (
 from sou.balance_sheet import BalanceSheetError, balance_sheet
 from sou.cli_periods import (
     report_period_options,
-    resolve_report_date,
+    report_range_options,
+    resolve_balance_sheet_date,
     resolve_report_dates,
 )
 from sou.console import (
@@ -31,7 +32,6 @@ from sou.pnl import ProfitAndLossError, profit_and_loss
 from sou.renderer import render_accounts
 from sou.storage import init_journal, load_journal, save_journal
 from sou.transactions import TransactionError, add_transaction
-
 
 CATEGORY_PREFIXES = {
     "Assets": "a",
@@ -155,7 +155,7 @@ def list_accounts(journal_path: Path):
 def check(journal_path: Path):
     """Validate a journal."""
     try:
-        load_journal(journal_path)
+        _ = load_journal(journal_path)
     except FileNotFoundError:
         raise click.ClickException(f"{journal_path} does not exist") from None
     except JournalParseError as error:
@@ -308,6 +308,7 @@ def split(
 @cli.command()
 @click.argument("account_reference", shell_complete=complete_account)
 @report_period_options
+@report_range_options
 @click.option(
     "-j",
     "--journal",
@@ -320,8 +321,8 @@ def balance(
     account_reference: str,
     from_text: str | None,
     to_text: str | None,
-    current_month: bool,
-    current_quarter: bool,
+    month: int | None,
+    quarter: int | None,
     all_time: bool,
     journal_path: Path,
 ):
@@ -333,8 +334,8 @@ def balance(
             journal.year,
             from_text,
             to_text,
-            current_month,
-            current_quarter,
+            month,
+            quarter,
             all_time,
             date.today(),
         )
@@ -353,6 +354,7 @@ def balance(
 @cli.command()
 @click.argument("account_reference", shell_complete=complete_account)
 @report_period_options
+@report_range_options
 @click.option(
     "-j",
     "--journal",
@@ -365,8 +367,8 @@ def ledger(
     account_reference: str,
     from_text: str | None,
     to_text: str | None,
-    current_month: bool,
-    current_quarter: bool,
+    month: int | None,
+    quarter: int | None,
     all_time: bool,
     journal_path: Path,
 ):
@@ -378,8 +380,8 @@ def ledger(
             journal.year,
             from_text,
             to_text,
-            current_month,
-            current_quarter,
+            month,
+            quarter,
             all_time,
             date.today(),
         )
@@ -396,6 +398,7 @@ def ledger(
 
 @cli.command()
 @report_period_options
+@report_range_options
 @click.option(
     "--depth",
     type=click.IntRange(min=0),
@@ -414,8 +417,8 @@ def ledger(
 def pnl(
     from_text: str | None,
     to_text: str | None,
-    current_month: bool,
-    current_quarter: bool,
+    month: int | None,
+    quarter: int | None,
     all_time: bool,
     depth: int,
     journal_path: Path,
@@ -427,8 +430,8 @@ def pnl(
             journal.year,
             from_text,
             to_text,
-            current_month,
-            current_quarter,
+            month,
+            quarter,
             all_time,
             date.today(),
         )
@@ -443,6 +446,7 @@ def pnl(
 
 @cli.command()
 @click.option("--at", "at_text", help="Balance sheet date in MM-DD format.")
+@report_period_options
 @click.option(
     "--depth",
     type=click.IntRange(min=0),
@@ -458,11 +462,23 @@ def pnl(
     default=Path("journal.sou"),
     show_default=True,
 )
-def bs(at_text: str | None, depth: int, journal_path: Path):
+def bs(
+    at_text: str | None,
+    quarter: int | None,
+    month: int | None,
+    depth: int,
+    journal_path: Path,
+):
     """Show assets, liabilities, and net worth."""
     try:
         journal = load_journal(journal_path)
-        at_date = resolve_report_date(journal.year, at_text, date.today())
+        at_date = resolve_balance_sheet_date(
+            journal.year,
+            at_text,
+            month,
+            quarter,
+            date.today(),
+        )
         report = balance_sheet(journal, at_date)
     except FileNotFoundError:
         raise click.ClickException(f"{journal_path} does not exist") from None

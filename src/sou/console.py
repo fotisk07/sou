@@ -15,8 +15,8 @@ from sou.models import (
 def _display_sign(account: Account) -> Decimal:
     """Return the multiplier used to display an account's natural balance."""
     if account.category in {"Liabilities", "Equity", "Income"}:
-        return Decimal("-1")
-    return Decimal("1")
+        return Decimal(-1)
+    return Decimal(1)
 
 
 def format_balance(

@@ -3,7 +3,6 @@ import pytest
 from sou.accounts import AccountError, add_account, resolve_account
 from sou.models import Account, Journal
 
-
 BANK = Account(category="Assets", path=("Bank",))
 CHECKING = Account(category="Assets", path=("Bank", "Checking"))
 
