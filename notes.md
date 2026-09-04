@@ -28,7 +28,7 @@ For ledger and balance we should have an option to set for current month for eas
 things (like subscriptions) that you now are repeated => later feature though
 
 TO ADD
-- reccurent transactions
+- recurrent transactions DONE
 - json output
 - m/q should be configurable with just the month/quarter number
 - add an option to have a quarter with all the months, as well as the year with all the quarter

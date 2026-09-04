@@ -146,6 +146,43 @@ sou split "Mixed food order" \
   e:Food:Coffee 3
 ```
 
+### Add recurring transactions
+
+Create a recurring transaction from signed account and amount pairs. The
+amounts must sum to zero, just like `sou split`. Recurrences are monthly by
+default:
+
+```bash
+sou add a Bank:Savings
+sou recur add "Monthly allocation" \
+  i:Salary -3000 \
+  a:Bank:Checking 2200 \
+  a:Bank:Savings 800 \
+  --start 01-31
+```
+
+Use `--repeat daily`, `--repeat weekly`, or `--repeat monthly` to select the
+frequency. List the configured templates with:
+
+```bash
+sou recur list
+```
+
+Post every occurrence due through today:
+
+```bash
+sou post-rec
+```
+
+The command catches up missed occurrences and advances each template, so it is
+safe to run repeatedly. Preview without changing the journal, or choose an
+explicit cutoff:
+
+```bash
+sou post-rec --dry-run
+sou post-rec --through 08-31
+```
+
 ### Check a balance
 
 A parent balance includes postings to all of its children. Reports default to
@@ -214,12 +251,22 @@ year: 2026
 Assets
   Bank
     Checking
+    Savings
 Liabilities
 Equity
   OpeningBalances
 Income
+  Salary
 Expenses
   Food
+
+[RECURRING]
+
+monthly 2026-01-31 Monthly allocation
+  next: 2026-08-31
+  Income::Salary  -3000.00
+  Assets::Bank:Checking  2200.00
+  Assets::Bank:Savings  800.00
 
 [TRANSACTIONS]
 
@@ -228,14 +275,17 @@ Expenses
   Expenses::Food  12.50
 ```
 
-Every transaction must have at least two postings whose amounts sum to zero.
-Amounts are rendered consistently with two decimal places.
+Every transaction and recurring template must have at least two postings whose
+amounts sum to zero. A recurring heading contains its frequency, original start
+date, and literal transaction description. Its `next` value records the next
+unposted occurrence. Amounts are rendered consistently with two decimal places.
 
 ## Current scope
 
 - One year per journal
 - One implicit currency
 - Quick two-account entry through `sou post` and split entry through `sou split`
+- Daily, weekly, and monthly recurring split transactions
 - Hierarchical accounts with rolled-up balances
 - Account balance and ledger queries
 - Profit and loss and balance sheet reports
