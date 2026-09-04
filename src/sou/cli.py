@@ -26,9 +26,21 @@ from sou.console import (
     format_ledger,
     format_profit_and_loss,
 )
-from sou.models import Account, Posting, Transaction
+from sou.models import (
+    Account,
+    Journal,
+    Posting,
+    RecurrenceFrequency,
+    RecurringTransaction,
+    Transaction,
+)
 from sou.parser import JournalParseError
 from sou.pnl import ProfitAndLossError, profit_and_loss
+from sou.recurring import (
+    RecurringTransactionError,
+    add_recurring_transaction,
+    post_due_transactions,
+)
 from sou.renderer import render_accounts
 from sou.storage import init_journal, load_journal, save_journal
 from sou.transactions import TransactionError, add_transaction
@@ -44,6 +56,40 @@ CATEGORY_PREFIXES = {
 
 def _today() -> date:
     return datetime.now().astimezone().date()
+
+
+def _parse_date(journal: Journal, date_text: str | None, label: str) -> date:
+    if date_text is None:
+        return _today()
+    try:
+        return date.fromisoformat(f"{journal.year}-{date_text}")
+    except ValueError:
+        raise click.ClickException(
+            f"invalid {label} '{date_text}'; expected MM-DD"
+        ) from None
+
+
+def _parse_posting_values(
+    journal: Journal, posting_values: tuple[str, ...]
+) -> list[Posting]:
+    if len(posting_values) % 2:
+        raise click.ClickException("each account must be followed by an amount")
+    if len(posting_values) < 4:
+        raise click.ClickException("a split transaction requires at least two postings")
+
+    postings = []
+    for account_reference, amount_text in zip(
+        posting_values[::2], posting_values[1::2], strict=True
+    ):
+        account = resolve_account(journal, account_reference)
+        try:
+            amount = Decimal(amount_text)
+        except InvalidOperation:
+            raise click.ClickException(
+                f"invalid amount '{amount_text}' for account '{account_reference}'"
+            ) from None
+        postings.append(Posting(account=account, amount=amount))
+    return postings
 
 
 def complete_account(
@@ -266,35 +312,10 @@ def split(
     Amounts are signed and must sum to zero. Quote DESCRIPTION if it contains
     spaces, for example: sou split "Mixed shopping" a:Bank -12 e:Food 12
     """
-    if len(posting_values) % 2:
-        raise click.ClickException("each account must be followed by an amount")
-    if len(posting_values) < 4:
-        raise click.ClickException("a split transaction requires at least two postings")
-
     try:
         journal = load_journal(journal_path)
-        if date_text:
-            try:
-                transaction_date = date.fromisoformat(f"{journal.year}-{date_text}")
-            except ValueError:
-                raise click.ClickException(
-                    f"invalid date '{date_text}'; expected MM-DD"
-                ) from None
-        else:
-            transaction_date = _today()
-
-        postings = []
-        for account_reference, amount_text in zip(
-            posting_values[::2], posting_values[1::2], strict=True
-        ):
-            account = resolve_account(journal, account_reference)
-            try:
-                amount = Decimal(amount_text)
-            except InvalidOperation:
-                raise click.ClickException(
-                    f"invalid amount '{amount_text}' for account '{account_reference}'"
-                ) from None
-            postings.append(Posting(account=account, amount=amount))
+        transaction_date = _parse_date(journal, date_text, "date")
+        postings = _parse_posting_values(journal, posting_values)
 
         transaction = Transaction(
             date=transaction_date,
@@ -307,6 +328,137 @@ def split(
         raise click.ClickException(f"{journal_path} does not exist") from None
     except (AccountError, JournalParseError, TransactionError) as error:
         raise click.ClickException(str(error)) from None
+
+
+@cli.group()
+def recur():
+    """Manage recurring transaction templates."""
+
+
+@recur.command("add", context_settings={"ignore_unknown_options": True})
+@click.argument("description")
+@click.argument("posting_values", nargs=-1, required=True)
+@click.option(
+    "--start",
+    "start_text",
+    help="First occurrence in MM-DD format. Defaults to today.",
+)
+@click.option(
+    "--repeat",
+    "frequency",
+    type=click.Choice(["daily", "weekly", "monthly"]),
+    default="monthly",
+    show_default=True,
+)
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def add_recurring(
+    description: str,
+    posting_values: tuple[str, ...],
+    start_text: str | None,
+    frequency: RecurrenceFrequency,
+    journal_path: Path,
+):
+    """Add a recurring transaction with signed ACCOUNT AMOUNT pairs."""
+    try:
+        journal = load_journal(journal_path)
+        start_date = _parse_date(journal, start_text, "start date")
+        postings = _parse_posting_values(journal, posting_values)
+        recurring_transaction = RecurringTransaction(
+            frequency=frequency,
+            start_date=start_date,
+            next_date=start_date,
+            description=description,
+            postings=postings,
+        )
+        add_recurring_transaction(journal, recurring_transaction)
+        save_journal(journal_path, journal)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except (
+        AccountError,
+        JournalParseError,
+        RecurringTransactionError,
+    ) as error:
+        raise click.ClickException(str(error)) from None
+
+
+@recur.command("list")
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def list_recurring(journal_path: Path):
+    """List recurring transaction templates."""
+    try:
+        journal = load_journal(journal_path)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except JournalParseError as error:
+        raise click.ClickException(str(error)) from None
+
+    if not journal.recurring_transactions:
+        click.echo("No recurring transactions.")
+        return
+
+    for recurring_transaction in journal.recurring_transactions:
+        click.echo(
+            f"{recurring_transaction.frequency} "
+            f"{recurring_transaction.start_date.isoformat()} "
+            f"{recurring_transaction.description} "
+            f"(next: {recurring_transaction.next_date.isoformat()})"
+        )
+        for posting in recurring_transaction.postings:
+            click.echo(f"  {posting.account}  {posting.amount:.2f}")
+
+
+@cli.command("post-rec")
+@click.option(
+    "--through",
+    "through_text",
+    help="Post occurrences through MM-DD. Defaults to today.",
+)
+@click.option("--dry-run", is_flag=True, help="Show due transactions without saving.")
+@click.option(
+    "-j",
+    "--journal",
+    "journal_path",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("journal.sou"),
+    show_default=True,
+)
+def post_recurring(through_text: str | None, dry_run: bool, journal_path: Path):
+    """Post all due recurring transactions."""
+    try:
+        journal = load_journal(journal_path)
+        through_date = _parse_date(journal, through_text, "date")
+        transactions = post_due_transactions(journal, through_date)
+        if not dry_run:
+            save_journal(journal_path, journal)
+    except FileNotFoundError:
+        raise click.ClickException(f"{journal_path} does not exist") from None
+    except (JournalParseError, RecurringTransactionError) as error:
+        raise click.ClickException(str(error)) from None
+
+    if not transactions:
+        click.echo("No recurring transactions due.")
+        return
+
+    action = "Would post" if dry_run else "Posted"
+    noun = "transaction" if len(transactions) == 1 else "transactions"
+    click.echo(f"{action} {len(transactions)} recurring {noun}:")
+    for transaction in transactions:
+        click.echo(f"  {transaction.date.isoformat()} {transaction.description}")
 
 
 @cli.command()
