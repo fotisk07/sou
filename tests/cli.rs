@@ -25,6 +25,119 @@ food = Expenses/Food
     (directory, path)
 }
 
+fn assert_invalid_journal(path: &std::path::Path, contents: &str, expected_error: &str) {
+    std::fs::write(path, contents).unwrap();
+    for args in [&["check"][..], &["sort"][..], &["bs", "--year"][..]] {
+        let output = Command::new(env!("CARGO_BIN_EXE_sou"))
+            .arg("-j")
+            .arg(path)
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            !output.status.success(),
+            "{args:?} accepted invalid journal"
+        );
+        let error = String::from_utf8_lossy(&output.stderr);
+        assert!(error.contains(expected_error), "{args:?}: {error}");
+        assert_eq!(std::fs::read_to_string(path).unwrap(), contents);
+    }
+}
+
+#[test]
+fn duplicate_account_declarations_are_rejected() {
+    let (_directory, path) = journal_file();
+    let contents = std::fs::read_to_string(&path).unwrap();
+    for (original, replacement, duplicate) in [
+        ("Assets\n", "Assets\nAssets\n", "Assets"),
+        ("  Bank\n", "  Bank\n  Bank\n", "Assets/Bank"),
+        ("  Bank\n", "  Bank\n  Savings\n  Bank\n", "Assets/Bank"),
+        (
+            "  Bank\n",
+            "  Bank\n    Checking\n    Checking\n",
+            "Assets/Bank/Checking",
+        ),
+        (
+            "Assets\n  Bank\n",
+            "Assets\n  Bank\nAssets\n  Savings\n",
+            "Assets",
+        ),
+    ] {
+        assert_invalid_journal(
+            &path,
+            &contents.replace(original, replacement),
+            &format!("duplicate account `{duplicate}`"),
+        );
+    }
+}
+
+#[test]
+fn account_indentation_requires_pairs_of_spaces_and_existing_parents() {
+    let (_directory, path) = journal_file();
+    let contents = std::fs::read_to_string(&path).unwrap();
+    for indentation in [" ", "   ", "\t", " \t", "\u{a0}\u{a0}"] {
+        assert_invalid_journal(
+            &path,
+            &contents.replace("  Bank", &format!("{indentation}Bank")),
+            "account indentation must use two spaces per level",
+        );
+    }
+    assert_invalid_journal(
+        &path,
+        &contents.replace("  Bank", "    Bank"),
+        "account is missing a parent",
+    );
+}
+
+#[test]
+fn account_names_can_repeat_under_different_parents() {
+    let (_directory, path) = journal_file();
+    let contents = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace("  Bank\n", "  Bank\n    Bank\n")
+        .replace("  Food\n", "  Food\n  Bank\n");
+    std::fs::write(&path, contents).unwrap();
+    for args in [&["check"][..], &["sort"][..], &["check"][..]] {
+        let output = Command::new(env!("CARGO_BIN_EXE_sou"))
+            .arg("-j")
+            .arg(&path)
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
+#[test]
+fn loaded_metadata_uses_the_same_name_validation_as_init() {
+    let (_directory, path) = journal_file();
+    let contents = std::fs::read_to_string(&path).unwrap();
+    for name in [
+        "[Example]",
+        "[RECURRING]",
+        "Example\tjournal",
+        "Example\u{1b}journal",
+    ] {
+        assert_invalid_journal(
+            &path,
+            &contents.replace("name: Test", &format!("name: {name}")),
+            "journal name must be nonempty and contain no control characters or brackets",
+        );
+        let output = Command::new(env!("CARGO_BIN_EXE_sou"))
+            .arg("-j")
+            .arg(path.with_file_name("invalid-init.sou"))
+            .args(["init", "--name", name])
+            .output()
+            .unwrap();
+        assert!(!output.status.success());
+        assert!(!path.with_file_name("invalid-init.sou").exists());
+    }
+}
+
 #[test]
 fn posting_saves_exact_transfers_and_rejects_fractional_cents_without_writing() {
     let (_directory, path) = journal_file();

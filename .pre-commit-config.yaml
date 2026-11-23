@@ -1,0 +1,16 @@
+repos:
+  - repo: local
+    hooks:
+      - id: rustfmt
+        name: Check Rust formatting
+        entry: cargo fmt --all -- --check
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: no-financial-journals
+        name: Prevent committing financial journals
+        entry: Financial journals must not be committed.
+        language: fail
+        files: '\.sou$'
+        exclude: '^tests/fixtures/'

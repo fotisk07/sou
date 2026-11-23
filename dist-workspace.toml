@@ -7,6 +7,12 @@ members = ["cargo:."]
 cargo-dist-version = "0.34.0"
 # CI backends to support
 ci = "github"
+# Require tests to pass before building release artifacts
+plan-jobs = ["./test"]
+# cargo-dist 0.34.0 generates an invalid $/.github path for custom jobs.
+# Preserve the corrected ./.github path in release.yml until upgrading dist.
+# Remove this override and regenerate CI once that upstream issue is fixed.
+allow-dirty = ["ci"]
 # The installers to generate for each app
 installers = ["shell", "homebrew"]
 # Target platforms to build apps for (Rust target-triple syntax)

@@ -1,9 +1,8 @@
 [package]
 name = "sou"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 repository = "https://github.com/fotisk07/sou"
-homepage = "https://github.com/fotisk07/sou"
 description = "Personal double-entry accounting in a plain-text journal"
 
 [[bin]]

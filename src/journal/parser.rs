@@ -4,7 +4,7 @@ use crate::models::{
 };
 use jiff::civil::Date;
 use rust_decimal::Decimal;
-use std::str::FromStr;
+use std::{collections::HashSet, str::FromStr};
 
 #[derive(Debug)]
 pub struct ParseError {
@@ -82,13 +82,25 @@ pub fn parse_journal(journal_text: &str) -> Result<Journal, ParseError> {
 fn parse_accounts(accounts_text: &str, section_line: usize) -> Result<Accounts, ParseError> {
     let mut accounts = Accounts::new();
     let mut stack: Vec<String> = Vec::new();
+    let mut declared = HashSet::new();
 
     for (index, line) in accounts_text.lines().enumerate() {
         if line.trim().is_empty() {
             continue;
         }
         let line_number = section_line + index;
-        let depth = line.chars().take_while(|c| *c == ' ').count() / 2;
+        let indentation = line.len() - line.trim_start().len();
+        if !indentation.is_multiple_of(2)
+            || !line.as_bytes()[..indentation]
+                .iter()
+                .all(|&byte| byte == b' ')
+        {
+            return Err(ParseError::at(
+                line_number,
+                "account indentation must use two spaces per level",
+            ));
+        }
+        let depth = indentation / 2;
         let name = line.trim().to_string();
 
         if depth > stack.len() {
@@ -96,6 +108,13 @@ fn parse_accounts(accounts_text: &str, section_line: usize) -> Result<Accounts, 
         }
         stack.truncate(depth);
         stack.push(name.clone());
+        let path = stack.join("/");
+        if !declared.insert(path.clone()) {
+            return Err(ParseError::at(
+                line_number,
+                format!("duplicate account `{path}`"),
+            ));
+        }
 
         if depth == 0 {
             accounts.root_mut(&name).ok_or_else(|| {

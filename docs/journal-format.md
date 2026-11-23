@@ -115,7 +115,9 @@ Expenses
   Food
 ```
 
-The full paths here include `Assets/Bank/Checking` and `Expenses/Food`. Declare a parent before its children; don't skip indentation levels.
+The full paths here include `Assets/Bank/Checking` and `Expenses/Food`. Declare a parent before its children; don't skip indentation levels. Tabs and odd numbers of leading spaces are rejected.
+
+Each full account path, including each root, may be declared only once. The same name can appear under different parents, such as `Assets/Other` and `Expenses/Other`.
 
 Each individual account name must be nonempty and contain no whitespace, control characters, slashes, colons, or square brackets. Slashes separate account names in paths, not in hierarchy declarations.
 

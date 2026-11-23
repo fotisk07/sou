@@ -4,7 +4,10 @@ mod write;
 pub(crate) use parser::parse_journal;
 pub use write::{create_journal, write_journal};
 
-use crate::{models::Journal, validation::validate_journal};
+use crate::{
+    models::Journal,
+    validation::{validate_journal, validate_metadata},
+};
 use std::fs;
 
 pub fn load_journal(path: &str) -> Result<Journal, String> {
@@ -16,6 +19,7 @@ pub fn load_journal(path: &str) -> Result<Journal, String> {
         None => format!("parse error: {}", error.message),
     })?;
 
+    validate_metadata(&journal.metadata).map_err(|error| format!("validation error: {error}"))?;
     validate_journal(&journal).map_err(|error| format!("validation error: {error}"))?;
 
     Ok(journal)
