@@ -4,36 +4,33 @@
 
 Sou is a command-line tool for personal double-entry accounting, inspired by [Beancount](https://github.com/beancount/beancount) and written in Rust 🦀.
 
-Keep your financial journal in a single, human-readable file. Record transactions from the terminal or edit them in your favourite text editor. Track changes with Git. Generate financial statements from the same file whenever you need them, view them in the terminal or export them for safekeeping. 
+Keep your financial journal in a single, human-readable file. Record transactions from the terminal, edit them in your favourite text editor, or have your agent do it if you trust it with your data. Track changes with Git. Generate financial statements from the same file whenever you need them, view them in the terminal or export them for safekeeping. 
+
+**Anti-pitch**
+If you don't like using the terminal, or looking for automation, bank syncing and graphs sou is not for you.
 
 [Why Sou?](#why-sou) · [Double-entry accounting](#why-double-entry-accounting) · [Installation](#installation) · [Quick start](#quick-start) · [Docs](#further-documentation)
 
 ## Why Sou?
 
-Sou is for people who like simple setups, owning their data and understanding their work deeply. It is well suited to computer nerds with accounting-nerd tendencies. If that makes you cringe, then Sou is not for you. If you like that sort of thing, keep reading! You don't have to be an accountant or a computer expert.
-
 What Sou gives you:
-- **One file you control.** Plain text, Git-diffable, no proprietary database. Use the CLI, edit it in your editor or have your agent use the CLI.
+- **One local offline file** You can keep a year's worth of your financial life in one human readable file, offline. 
 - **Financial statements.** Organise your money like a business. View reports in the terminal or export them to PDF and other formats.
-- **Local and offline.** One binary, no internet required. Your journal lives wherever you want.
 
-Sou is not a budgeting app, has no graphical dashboard, and won't connect to your bank. Recording transactions is part of paying attention to my money, not just work to eliminate.
+Sou is not a budgeting app, has no graphical dashboard, and won't connect to your bank. The whole point is the offline bare bones CLI. If you prefer to see graphs, or use it like budget app you can build on it ! My gf did exactly that here :
 
-Want something outside that scope? Point your agent at the code and make it yours.
 
 ## Why double-entry accounting?
 
-The history of accounting is a fascinating one, tracing back to ancient Mesopotamia. Humans have always tried to count things, particularly the things they cared about. In ancient Mesopotamia clay tokens were used to simply count how many of the thing we had. In Italy during the Renaissance however something incredible happened: We created **double-entry accounting**. 
+As boring as it sounds, accounting goes hand in hard with human civilization. In ancient Mesopotamia they used clay tokens to count who owned and owed livestock. During the founding of modern capitalism in Italy, the need to handle more complex transactions gave birth to **double entry accounting**.  
 
-Double-entry accounting has an elegant constraint: every transaction must balance. Instead of recording only an amount spent, you record where value came from and where it went.
+Double-entry accounting has one main constraint: every transaction must balance. Instead of recording only an amount spent, you record where value came from and where it went.
 
 - Buying lunch reduces your bank balance and increases a food expense.
 - Moving money from your bank account to savings changes where you hold it; it isn't an expense.
 - Taking out a loan increases your cash, but also what you owe. It isn't income.
 
-A transaction can involve two accounts or several. The amounts across its postings must sum to zero. That constraint helps catch mistakes, though a balanced entry can still use the wrong accounts or amounts.
-
-Sou applies this model to your personal finances. This README isn't an accounting course; for the foundations, see:
+Sou applies this model to your personal finances. Explaining accounting in detail is not the scope of this REAMDE, you can see :
 
 - [Beancount](https://beancount.github.io/), my inspiration. Beancount is much more complete than sou and has extensive documentation.
 - [Plain Text Accounting](https://plaintextaccounting.org/), for introductions and resources about keeping accounts in text files.
