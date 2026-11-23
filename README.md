@@ -40,13 +40,20 @@ Sou applies this model to your personal finances. This README isn't an accountin
 
 ## Installation
 
-With Rust and Cargo installed, clone this repository, enter its directory, and run:
+On macOS or Linux, no Rust required:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/fotisk07/sou/releases/latest/download/sou-installer.sh | sh
+```
+
+Or build from source with Rust installed, from the cloned repository:
 
 ```sh
 cargo install --path .
 ```
 
-This installs `sou` in `~/.cargo/bin`. Make sure that directory is in your `PATH`.
+Both install to `~/.cargo/bin` by default. Make sure it is in your `PATH`, then run `sou --version`.
 
 ## Quick start
 

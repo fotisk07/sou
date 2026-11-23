@@ -2,6 +2,9 @@
 name = "sou"
 version = "0.3.0"
 edition = "2024"
+repository = "https://github.com/fotisk07/sou"
+homepage = "https://github.com/fotisk07/sou"
+description = "Personal double-entry accounting in a plain-text journal"
 
 [[bin]]
 name = "sou"
@@ -17,3 +20,8 @@ rust_decimal = "1.43.0"
 rust_xlsxwriter = "0.103.0"
 tabled = "0.22.0"
 tempfile = "3.27.0"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
