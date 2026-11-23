@@ -1,131 +1,142 @@
 # Sou
 
-A personal accounting CLI written in Rust.
+**Your finances, in plain text.**
 
-Pitch: Basic accounting, in your terminal, in a plain text journal.
-Anti-pitch: Not a budgeting app or a dashboard. Other tools can do that.
+Sou is a command-line tool for personal double-entry accounting, inspired by [Beancount](https://github.com/beancount/beancount) and written in Rust 🦀.
+
+Keep your financial journal in a single, human-readable file. Record transactions from the terminal or edit them in your favourite text editor. Track changes with Git. Generate financial statements from the same file whenever you need them, view them in the terminal or export them for safekeeping. 
+
+[Why Sou?](#why-sou) · [Double-entry accounting](#why-double-entry-accounting) · [Installation](#installation) · [Quick start](#quick-start) · [Docs](#further-documentation)
+
+## Why Sou?
+
+Sou is for people who like simple setups, owning their data and understanding their work deeply. It is well suited to computer nerds with accounting-nerd tendencies. If that makes you cringe, then Sou is not for you. If you like that sort of thing, keep reading! You don't have to be an accountant or a computer expert.
+
+What Sou gives you:
+- **One file you control.** Plain text, Git-diffable, no proprietary database. Use the CLI, edit it in your editor or have your agent use the CLI.
+- **Financial statements.** Organise your money like a business. View reports in the terminal or export them to PDF and other formats.
+- **Local and offline.** One binary, no internet required. Your journal lives wherever you want.
+
+Sou is not a budgeting app, has no graphical dashboard, and won't connect to your bank. Recording transactions is part of paying attention to my money, not just work to eliminate.
+
+Want something outside that scope? Point your agent at the code and make it yours.
+
+## Why double-entry accounting?
+
+The history of accounting is a fascinating one, tracing back to ancient Mesopotamia. Humans have always tried to count things, particularly the things they cared about. In ancient Mesopotamia clay tokens were used to simply count how many of the thing we had. In Italy during the Renaissance however something incredible happened: We created **double-entry accounting**. 
+
+Double-entry accounting has an elegant constraint: every transaction must balance. Instead of recording only an amount spent, you record where value came from and where it went.
+
+- Buying lunch reduces your bank balance and increases a food expense.
+- Moving money from your bank account to savings changes where you hold it; it isn't an expense.
+- Taking out a loan increases your cash, but also what you owe. It isn't income.
+
+A transaction can involve two accounts or several. The amounts across its postings must sum to zero. That constraint helps catch mistakes, though a balanced entry can still use the wrong accounts or amounts.
+
+Sou applies this model to your personal finances. This README isn't an accounting course; for the foundations, see:
+
+- [Beancount](https://beancount.github.io/), my inspiration. Beancount is much more complete than sou and has extensive documentation.
+- [Plain Text Accounting](https://plaintextaccounting.org/), for introductions and resources about keeping accounts in text files.
 
 ## Installation
 
-To use sou, clone this github repo and run
+With Rust and Cargo installed, clone this repository, enter its directory, and run:
 
 ```sh
 cargo install --path .
 ```
 
-This installs sou in `~/.cargo/bin`. Make sure it is in your path.
+This installs `sou` in `~/.cargo/bin`. Make sure that directory is in your `PATH`.
 
 ## Quick start
 
-To create your own `journal.sou`
+### Create your journal
+
+In the directory where you want to keep your finances:
 
 ```sh
-sou init
+sou init --author "Your name"
 ```
 
-Every journal must include an `author:` line under `[JOURNAL]`, but the name may be blank. Use `sou init --author "Your name"` to set it; `sou init` without a name writes an empty `author:` line. PDFs show the author only when a name is present. Older journals need this line added before they can be used.
+This creates `journal.sou` for the current year, using EUR by default. Use `--year` and `--currency` to choose something else. The author is optional.
 
-You can create your accounts using `add` and post with `post`.
+### Create a few accounts
 
 ```sh
 sou add Assets/Bank
+sou add Equity/OpeningBalances
+sou add Income/Salary
 sou add Expenses/Food
 sou add Expenses/Household
+```
+
+Account paths form a hierarchy: `Expenses/Food` is a child of `Expenses`.
+
+### Record some transactions
+
+Suppose you begin tracking with 1,000 in your bank account. Record that starting balance against equity, not income—you already had this money:
+
+```sh
+sou post 1000 Equity/OpeningBalances Assets/Bank Opening balance
+```
+
+Now record a salary payment and lunch:
+
+```sh
+sou post 2500 Income/Salary Assets/Bank Salary
 sou post 10 Assets/Bank Expenses/Food Coffee and lunch
 ```
 
-You can do more complicated postings using `split`. The amounts must sum to zero.
+The basic form is `sou post AMOUNT FROM TO DESCRIPTION`.
+
+For a purchase split between categories, use `split`. Its signed amounts must sum to zero:
 
 ```sh
 sou split "Grocery run" Assets/Bank -50 Expenses/Food 40 Expenses/Household 10
 ```
 
-To inspect your accounts use `list` and `ledger`, and to show your P&L and balance sheet use `pnl` and `bs`.
+### Look at the file
+
+Open `journal.sou` in your editor. The lunch transaction looks like this, with its posting date (shown here as an example):
+
+```text
+2026-03-15 Coffee and lunch
+  Assets/Bank  -10.00
+  Expenses/Food  10.00
+```
+
+You can edit the journal directly, not just through Sou. After making changes, check it:
+
+```sh
+sou check
+```
+
+The file is plain text, so you can also version it with Git and review changes using `git diff`. Financial records are sensitive: keep your repository private. Git history is not encryption.
+
+### See where you stand
 
 ```sh
 sou list
-sou ledger Assets/Bank
-sou pnl
-sou bs
+sou ledger Assets/Bank --year
+sou pnl --year
+sou bs --year
 ```
 
-You can choose the timeframe and how fine you want your P&L to be.
+- `list` shows your account tree.
+- `ledger` shows an account's transactions and running balance.
+- `pnl` shows income and expenses over a period.
+- `bs` shows assets, liabilities, and equity at a point in time.
+
+Export a report when you need to share it or work in a spreadsheet:
 
 ```sh
-sou pnl --month
-sou pnl --quarter 2
-sou pnl --from 01-03 --to 15-06
-sou pnl --year --by-month --depth 2
-sou bs --to 30-06
+sou pnl --year --format xlsx > pnl.xlsx
 ```
 
-Dates are `DD-MM`, in the journal year. Use `sou <command> --help` for the rest.
+That's the basic loop: record, inspect, adjust. Use `sou --help` or `sou <command> --help` to explore the commands.
 
-Compare balance-sheet snapshots at month- or quarter-end:
+## Further documentation
 
-```sh
-sou bs --year --by-quarter
-sou bs --quarter 2 --by-month
-sou bs --to 15-05 --by-month
-```
+- [Usage guide](docs/usage.md): dates, reporting periods, exports, recurring postings, and shell completion.
+- [Journal format](docs/journal-format.md): how to read and edit the file, with a complete example.
 
-Each column is a cumulative balance at its labelled date, not activity during the period. There is no Total column. An explicit mid-period cutoff produces a final snapshot on that exact date. Without a month/quarter selection, comparisons start in January. The same options work with CSV and XLSX.
-
-Export P&L and balance sheet reports to an Excel/LibreOffice workbook, preserving account indentation and numeric amounts:
-
-```sh
-sou pnl --year --depth 2 --format xlsx > pnl.xlsx
-sou pnl --year --by-month --depth 2 --format xlsx > monthly.xlsx
-sou bs --to 31-12 --depth 2 --format xlsx > bs.xlsx
-```
-
-The same date filters and account depth apply. Bold parent rows are subtotals, not additional amounts to sum.
-
-For a print-ready PDF, generated directly in Rust (no browser or external converter):
-
-```sh
-sou pnl --quarter 4 --by-month --format pdf > pnl-q4.pdf
-sou pnl --year --by-quarter --format pdf > pnl-year.pdf
-sou bs --year --format pdf > bs.pdf
-sou bs --year --by-quarter --format pdf > bs-quarterly.pdf
-```
-
-PDF uses the same figures and depth (default 1), embedded fonts, repeated table headers, and page numbers. Wide reports automatically use landscape or A3 paper. PDF output reflects entered transactions only; it does not certify that a period's records are complete.
-
-For plain CSV data instead:
-
-```sh
-sou pnl --year --depth 2 --format csv > pnl.csv
-sou pnl --year --by-month --depth 2 --format csv > monthly.csv
-sou bs --to 31-12 --depth 2 --format csv > bs.csv
-```
-
-CSV includes full account paths, depth, and row type (`account`, `subtotal`, `direct`, or `result`). Subtotals include their children; do not sum all rows together. Amounts are plain decimals without thousands separators.
-
-## Recurring postings
-
-Create a template, then post what is due. Adding a template does not post anything.
-
-```sh
-sou recur add Lunch Assets/Bank -10 Expenses/Food 10 --week
-sou recur list
-sou recur post --dry-run
-sou recur post
-```
-
-Monthly by default. You can also use `--day`, `--week` or `--biweekly`.
-Use `--start DD-MM` to choose the first occurrence, otherwise it starts today in a current-year journal.
-
-## Account completion
-
-Enable Tab completion by adding this to `~/.zshrc` (zsh):
-
-```sh
-autoload -Uz compinit
-compinit
-source <(COMPLETE=zsh sou)
-```
-
-For bash, add `source <(COMPLETE=bash sou)` to `~/.bashrc` instead.
-
-Accounts come from `journal.sou` in the current directory. For another journal, put `-j path/to/journal.sou` before the command.
